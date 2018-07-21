@@ -53,7 +53,7 @@ public abstract class ExcelConfigureUtil {
                 order = (index.size() > 0) ? index.pop() : getFreeIndex(currIndex, conf);
             }
             if (conf[order] != null) {
-                Integer tempIndex = (index.size() != 0 && (tempIndex = index.pop()) != null) ? tempIndex : getFreeIndex(currIndex, conf);
+                Integer tempIndex = (index.size() > 0) ? index.pop() : getFreeIndex(currIndex, conf);
                 ExcelColumnConf temp = conf[order];
                 conf[order] = columnConf;
                 conf[tempIndex] = temp;
@@ -86,7 +86,7 @@ public abstract class ExcelConfigureUtil {
                 order = (index.size() > 0) ? index.pop() : getFreeIndex(i, conf);
             }
             if (conf[order] != null) {
-                Integer tempIndex = (index.size() != 0 && (tempIndex = index.pop()) != null) ? tempIndex : getFreeIndex(i, conf);
+                Integer tempIndex = (index.size() > 0) ? index.pop() : getFreeIndex(i, conf);
                 ExcelColumnConf temp = conf[order];
                 conf[order] = columnConf;
                 conf[tempIndex] = temp;
