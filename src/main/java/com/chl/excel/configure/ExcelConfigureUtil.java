@@ -50,7 +50,7 @@ public abstract class ExcelConfigureUtil {
                 }
                 orderSets.add(order);
             } else {
-                order = (index.size() != 0 && (order = index.pop()) != null && index.add(getFreeIndex(i, conf))) ? order : getFreeIndex(currIndex, conf);
+                order = (index.size() > 0) ? index.pop() : getFreeIndex(currIndex, conf);
             }
             if (conf[order] != null) {
                 Integer tempIndex = (index.size() != 0 && (tempIndex = index.pop()) != null) ? tempIndex : getFreeIndex(currIndex, conf);
@@ -83,7 +83,7 @@ public abstract class ExcelConfigureUtil {
                 }
                 orderSets.add(order);
             } else {
-                order = (index.size() != 0 && (order = index.pop()) != null) ? order : getFreeIndex(i, conf);
+                order = (index.size() > 0) ? index.pop() : getFreeIndex(i, conf);
             }
             if (conf[order] != null) {
                 Integer tempIndex = (index.size() != 0 && (tempIndex = index.pop()) != null) ? tempIndex : getFreeIndex(i, conf);
