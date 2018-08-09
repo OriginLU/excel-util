@@ -1,5 +1,6 @@
 package com.chl.excel.configure;
 
+import com.chl.excel.annotation.Excel;
 import com.chl.excel.annotation.ExcelColumn;
 import com.chl.excel.entity.ExcelColumnConf;
 import com.chl.excel.exception.RepeatOrderExcetion;
@@ -30,6 +31,18 @@ public abstract class ExcelConfigureUtil {
         array = getExcelColumnMethodArray(clazz, methods, array, fields.size());
         return array;
 
+    }
+
+    public static String getExcelTitleName(Class type){
+
+        Excel annotation = (Excel) type.getAnnotation(Excel.class);
+        return annotation.value();
+    }
+
+    public static String getExcelVersion(Class type){
+
+        Excel annotation = (Excel) type.getAnnotation(Excel.class);
+        return annotation.version();
     }
 
     private static ExcelColumnConf[] getExcelColumnMethodArray(Class clazz, List<Method> methods, ExcelColumnConf[] conf, Integer startIndex) throws RepeatOrderExcetion {

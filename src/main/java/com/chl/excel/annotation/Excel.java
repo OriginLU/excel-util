@@ -1,5 +1,7 @@
 package com.chl.excel.annotation;
 
+import com.chl.excel.constant.VersionConstant;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -13,5 +15,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Excel {
 
-    String name() default "";
+    String value() default "";
+
+    String version() default VersionConstant.EXCEL_2007_ADV;
 }
