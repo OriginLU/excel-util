@@ -19,7 +19,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author LCH
@@ -30,13 +31,14 @@ public abstract class ExcelUtils {
 
     private static int CELL_WIDTH = 20;
 
-    private static ConcurrentMap<String,CellStyle> CELL_STYLE       =       new ConcurrentHashMap();
+    private static ConcurrentMap<String, CellStyle> CELL_STYLE = new ConcurrentHashMap();
 
-    public static Workbook createExcel(List list, Class type){
+    public static Workbook createExcel(List list, Class type, boolean isCreateTitle, boolean isCreateColumnName) {
 
         if (type.getAnnotation(Excel.class) == null) {
 
         }
+        int rowNum = 0;
         int length = list.size();
         String titleName = ExcelConfigureUtil.getExcelTitleName(type);
         String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
@@ -45,134 +47,57 @@ public abstract class ExcelUtils {
 
         Sheet sheet = workbook.createSheet(titleName);
         sheet.setDefaultColumnWidth(CELL_WIDTH);
+        rowNum = createTitleRow(workbook, sheet, titleName, conf.length, isCreateTitle);
+        rowNum = createColumnName(workbook, sheet, conf, rowNum, isCreateColumnName);
 
-        int rowNum = createTitleRow(workbook,sheet,titleName,length);
-        rowNum = createColumnName(workbook,sheet,conf,rowNum);
-        CountDownLatch latch = new CountDownLatch(length);
-        for (int i = rowNum , j = 0; i < length; i++ , j++) {
-//            createDataRow(sheet.createRow(i), list.get(j), conf);
-            createRowTask(sheet.createRow(i), list.get(j), conf,latch);
+        for (int i = rowNum, j = 0; i < length; i++, j++) {
+            createDataRow(sheet.createRow(i), list.get(j), conf);
         }
-//        return workbook;
-        return getWorkBook(workbook,latch);
+        return workbook;
     }
 
-    private static int createColumnName(Workbook workbook, Sheet sheet, ExcelColumnConf[] conf, int rowNum) {
+    private static int createColumnName(Workbook workbook, Sheet sheet, ExcelColumnConf[] conf, int rowNum, boolean isCreateColumnName) {
 
-        Row row = sheet.createRow(rowNum);
-        for (int i = 0; i < conf.length; i++) {
-            Map<Class, Annotation> annotations = conf[i].getAnnotations();
-            ExcelColumn excelColumn = (ExcelColumn) annotations.get(ExcelColumn.class);
-            String columnName = excelColumn.columnTitle();
-            row.createCell(i).setCellValue(columnName);
+        if (isCreateColumnName){
+            Row row = sheet.createRow(rowNum);
+            for (int i = 0; i < conf.length; i++) {
+                Map<Class, Annotation> annotations = conf[i].getAnnotations();
+                ExcelColumn excelColumn = (ExcelColumn) annotations.get(ExcelColumn.class);
+                String columnName = excelColumn.columnTitle();
+                row.createCell(i).setCellValue(columnName);
 
+            }
+            return (rowNum + 1);
         }
-        return (rowNum + 1);
+        return rowNum;
     }
 
-    private static Workbook getWorkBook(Workbook workbook, CountDownLatch latch) {
+    private static int createTitleRow(Workbook book, Sheet sheet, String titleName, int columnLength, boolean isCreateTitle) {
 
-        try {
-            latch.await();
-            return workbook;
-        }catch (InterruptedException e){
-            throw new ExcelCreateException("",e);
-        }
-    }
-
-    private static int createTitleRow(Workbook book,Sheet sheet,String titleName,int columnLength) {
-
-        if (StringUtils.isNotBlank(titleName)){
-            Row titleRow = sheet.createRow(0);
-            Cell cell = titleRow.createCell(0);
-            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, columnLength - 1));
-            cell.setCellStyle(getTitleCellStyle(book));
-            cell.setCellValue(titleName);
-            return 1;
+        if (isCreateTitle){
+            if (StringUtils.isNotBlank(titleName)) {
+                Row titleRow = sheet.createRow(0);
+                Cell cell = titleRow.createCell(0);
+                sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, columnLength - 1));
+                cell.setCellStyle(getTitleCellStyle(book));
+                cell.setCellValue(titleName);
+                return 1;
+            }
         }
         return 0;
     }
 
 
-    private static class ExecutorServiceFactory{
-
-        private static ExecutorService executorService;
-
-        public synchronized static ExecutorService getExecutorInstance(){
-
-            if (null != executorService){
-                return executorService;
-            }
-            int coreCount = Runtime.getRuntime().availableProcessors();
-            executorService = Executors.newFixedThreadPool(coreCount);
-            return executorService;
-
-        }
-
-        public synchronized static void close(){
-
-            if (executorService != null){
-                if (!executorService.isShutdown()) {
-                    executorService.shutdown();
-                }
-            }
-        }
-
-    }
-
-    private static void createRowTask(final Row row, final Object obj, final ExcelColumnConf[] configs,final CountDownLatch latch){
-
-        ExecutorService executorService = ExecutorServiceFactory.getExecutorInstance();
-
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
-                createDataRow(row,obj,configs);
-                latch.countDown();
-            }
-        });
-    }
-
-
-    private static void createRowTask(final CountDownLatch latch){
-
-        ExecutorService executorService = ExecutorServiceFactory.getExecutorInstance();
-
-        executorService.execute(new Runnable() {
-            @Override
-            public void run() {
-                System.out.println(Thread.currentThread().getName() + " : " + Math.random());
-                latch.countDown();
-            }
-        });
-    }
-
-    public static void main(String[] args){
-
-        CountDownLatch latch = new CountDownLatch(2000);
-        for (int i = 0; i < 2000; i++) {
-            createRowTask(latch);
-        }
-        try {
-
-            latch.await();
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        ExecutorServiceFactory.close();
-    }
-
-
-
     /**
      * 设置标题样式
+     *
      * @param wb
      * @return
      */
     private static CellStyle getTitleCellStyle(Workbook wb) {
 
         CellStyle titleStyle;
-        if ((titleStyle = CELL_STYLE.get(CellStyleConstant.TITLE_STYLE)) != null){
+        if ((titleStyle = CELL_STYLE.get(CellStyleConstant.TITLE_STYLE)) != null) {
             return titleStyle;
         }
 
@@ -190,27 +115,28 @@ public abstract class ExcelUtils {
         titleStyle.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
         titleStyle.setFont(ztFont);
 
-        CELL_STYLE.putIfAbsent(CellStyleConstant.TITLE_STYLE,titleStyle);
+        CELL_STYLE.putIfAbsent(CellStyleConstant.TITLE_STYLE, titleStyle);
         return titleStyle;
     }
 
 
     /**
      * 设置单元格样式
+     *
      * @param wb
      * @return
      */
     private static CellStyle getContentCellStyle(Workbook wb) {
 
         CellStyle cellStyle;
-        if ((cellStyle = CELL_STYLE.get(CellStyleConstant.CONTENT_STYLE)) != null){
+        if ((cellStyle = CELL_STYLE.get(CellStyleConstant.CONTENT_STYLE)) != null) {
             return cellStyle;
         }
         Font cellFont = wb.createFont();
         cellFont.setItalic(false);                                      // 设置字体为斜体字
         cellFont.setFontName("宋体");                                    // 字体应用到当前单元格上
         cellFont.setColor(Font.COLOR_NORMAL);                           // 将字体设置为“红色”
-        cellFont.setFontHeightInPoints((short)10);                      // 将字体大小设置为18px
+        cellFont.setFontHeightInPoints((short) 10);                      // 将字体大小设置为18px
         cellFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
 
         cellStyle = wb.createCellStyle();                     //表格样式
@@ -223,12 +149,12 @@ public abstract class ExcelUtils {
         cellStyle.setBorderBottom(HSSFCellStyle.BORDER_THIN);           //下边框
         cellStyle.setVerticalAlignment(HSSFCellStyle.VERTICAL_CENTER);
 
-        CELL_STYLE.putIfAbsent(CellStyleConstant.CONTENT_STYLE,cellStyle);  //等待样式设置完成后再放入容器，防止其他线程取到未设置好的样式
+        CELL_STYLE.putIfAbsent(CellStyleConstant.CONTENT_STYLE, cellStyle);  //等待样式设置完成后再放入容器，防止其他线程取到未设置好的样式
 
         return cellStyle;
     }
 
-    private static void createDataRow(Row row, Object obj, ExcelColumnConf[] configs){
+    private static void createDataRow(Row row, Object obj, ExcelColumnConf[] configs) {
 
         try {
 
@@ -245,8 +171,8 @@ public abstract class ExcelUtils {
                 }
                 row.createCell(i).setCellValue(convertToString(result, config.getAnnotations()));
             }
-        }catch (InvocationTargetException e){
-            throw new ExcelCreateException("invoke method error ",e);
+        } catch (InvocationTargetException e) {
+            throw new ExcelCreateException("invoke method error ", e);
         }
     }
 
