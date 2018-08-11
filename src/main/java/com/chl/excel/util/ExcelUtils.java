@@ -1,10 +1,11 @@
 package com.chl.excel.util;
 
 import com.chl.excel.annotation.Excel;
+import com.chl.excel.annotation.ExcelColumn;
 import com.chl.excel.configure.ExcelConfigureUtil;
 import com.chl.excel.constant.CellStyleConstant;
 import com.chl.excel.entity.ExcelColumnConf;
-import com.chl.excel.exception.RepeatOrderExcetion;
+import com.chl.excel.exception.ExcelCreateException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.usermodel.HSSFFont;
@@ -16,9 +17,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
 
 /**
  * @author LCH
@@ -31,23 +32,52 @@ public abstract class ExcelUtils {
 
     private static ConcurrentMap<String,CellStyle> CELL_STYLE       =       new ConcurrentHashMap();
 
-    public static Workbook createSXSSWorkBook(List list, Class type) throws Exception {
+    public static Workbook createExcel(List list, Class type){
 
         if (type.getAnnotation(Excel.class) == null) {
 
         }
+        int length = list.size();
         String titleName = ExcelConfigureUtil.getExcelTitleName(type);
         String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
-        Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
         ExcelColumnConf[] conf = ExcelConfigureUtil.getExcelColumnConfiguration(type);
+        Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
 
         Sheet sheet = workbook.createSheet(titleName);
-        int rowNum = createTitleRow(workbook,sheet,titleName,conf.length);
-        for (int i = rowNum, length = list.size(), j = 0; i < length; i++,j++) {
-            sheet.setDefaultColumnWidth(CELL_WIDTH);
-            createDataRow(sheet.createRow(i), list.get(j), conf);
+        sheet.setDefaultColumnWidth(CELL_WIDTH);
+
+        int rowNum = createTitleRow(workbook,sheet,titleName,length);
+        rowNum = createColumnName(workbook,sheet,conf,rowNum);
+        CountDownLatch latch = new CountDownLatch(length - 1);
+        for (int i = rowNum , j = 0; i < length; i++ , j++) {
+//            createDataRow(sheet.createRow(i), list.get(j), conf);
+            createRowTask(sheet.createRow(i), list.get(j), conf,latch);
         }
-        return workbook;
+//        return workbook;
+        return getWorkBook(workbook,latch);
+    }
+
+    private static int createColumnName(Workbook workbook, Sheet sheet, ExcelColumnConf[] conf, int rowNum) {
+
+        Row row = sheet.createRow(rowNum);
+        for (int i = 0; i < conf.length; i++) {
+            Map<Class, Annotation> annotations = conf[i].getAnnotations();
+            ExcelColumn excelColumn = (ExcelColumn) annotations.get(ExcelColumn.class);
+            String columnName = excelColumn.columnTitle();
+            row.createCell(i).setCellValue(columnName);
+
+        }
+        return (rowNum + 1);
+    }
+
+    private static Workbook getWorkBook(Workbook workbook, CountDownLatch latch) {
+
+        try {
+            latch.await();
+            return workbook;
+        }catch (InterruptedException e){
+            throw new ExcelCreateException("",e);
+        }
     }
 
     private static int createTitleRow(Workbook book,Sheet sheet,String titleName,int columnLength) {
@@ -62,6 +92,77 @@ public abstract class ExcelUtils {
         }
         return 0;
     }
+
+
+    private static class ExecutorServiceFactory{
+
+        private static ExecutorService executorService;
+
+        public synchronized static ExecutorService getExecutorInstance(){
+
+            if (null != executorService){
+                return executorService;
+            }
+            int coreCount = Runtime.getRuntime().availableProcessors();
+            executorService = Executors.newFixedThreadPool(coreCount);
+            return executorService;
+
+        }
+
+        public synchronized static void close(){
+
+            if (executorService != null){
+                if (!executorService.isShutdown()) {
+                    executorService.shutdown();
+                }
+            }
+        }
+
+    }
+
+    private static void createRowTask(final Row row, final Object obj, final ExcelColumnConf[] configs,final CountDownLatch latch){
+
+        ExecutorService executorService = ExecutorServiceFactory.getExecutorInstance();
+
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                createDataRow(row,obj,configs);
+                latch.countDown();
+            }
+        });
+    }
+
+
+    private static void createRowTask(final CountDownLatch latch){
+
+        ExecutorService executorService = ExecutorServiceFactory.getExecutorInstance();
+
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println(Thread.currentThread().getName() + " : " + Math.random());
+                latch.countDown();
+            }
+        });
+    }
+
+    public static void main(String[] args){
+
+        CountDownLatch latch = new CountDownLatch(2000);
+        for (int i = 0; i < 2000; i++) {
+            createRowTask(latch);
+        }
+        try {
+
+            latch.await();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        ExecutorServiceFactory.close();
+    }
+
+
 
     /**
      * 设置标题样式
@@ -127,20 +228,25 @@ public abstract class ExcelUtils {
         return cellStyle;
     }
 
-    private static void createDataRow(Row row, Object obj, ExcelColumnConf[] configs) throws InvocationTargetException {
+    private static void createDataRow(Row row, Object obj, ExcelColumnConf[] configs){
 
-        Object result = null;
-        for (int i = 0, length = configs.length; i < length; i++) {
-            ExcelColumnConf config = configs[i];
-            Field field = config.getAnnotationField();
-            Method method = config.getAnnotationMethod();
-            if (field != null) {
-                result = ReflectUtils.getFieldValue(obj, field);
+        try {
+
+            Object result = null;
+            for (int i = 0, length = configs.length; i < length; i++) {
+                ExcelColumnConf config = configs[i];
+                Field field = config.getAnnotationField();
+                Method method = config.getAnnotationMethod();
+                if (field != null) {
+                    result = ReflectUtils.getFieldValue(obj, field);
+                }
+                if (method != null) {
+                    result = ReflectUtils.invokeMethod(obj, method);
+                }
+                row.createCell(i).setCellValue(convertToString(result, config.getAnnotations()));
             }
-            if (method != null) {
-                result = ReflectUtils.invokeMethod(obj, method);
-            }
-            row.createCell(i).setCellValue(convertToString(result, config.getAnnotations()));
+        }catch (InvocationTargetException e){
+            throw new ExcelCreateException("invoke method error ",e);
         }
     }
 
@@ -148,7 +254,7 @@ public abstract class ExcelUtils {
         if (result == null) {
             return "";
         }
-        return null;
+        return result.toString();
     }
 
 
@@ -162,52 +268,6 @@ public abstract class ExcelUtils {
         cellStyle.setFont(font);
 
         return cellStyle;
-    }
-
-
-
-    public static void main(String[] args) {
-
-        try {
-            Set<Integer> orderSets = new HashSet();
-            LinkedList<Integer> index = new LinkedList();
-            List<Integer> list = Arrays.asList(0, 6, 2, 5, -1, -1, 4, 8,7);
-            Integer[] conf = new Integer[list.size()];
-            long start = System.currentTimeMillis();
-            for (int i = 0, length = list.size(); i < length; i++) {
-                Integer order = list.get(i);
-                if (order > -1) {
-                    if (orderSets.contains(order)) {
-                        throw new RepeatOrderExcetion("the order must not be repeated, the repeat order is " + order);
-                    }
-                    orderSets.add(order);
-                } else {
-                    order = (index.size() > 0) ? index.pop() : getFreeIndex(i, conf);
-                }
-                if (conf[order] != null) {
-                    Integer tempIndex = (index.size() > 0) ? index.pop() : getFreeIndex(i, conf);
-                    Integer temp = conf[order];
-                    conf[order] = order;
-                    conf[tempIndex] = tempIndex;
-                } else {
-                    conf[order] = order;
-                }
-                if (!index.contains(order = getFreeIndex(i, conf)) && i != length - 1)
-                    index.add(order);
-            }
-            System.out.println("time : " + (System.currentTimeMillis() - start));
-            System.out.println(Arrays.toString(conf));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-    public static Integer getFreeIndex(Integer index, Integer[] conf) {
-
-        if (index < conf.length - 1 && conf[index] != null) {
-            index = getFreeIndex(index + 1, conf);
-        }
-        return index;
     }
 
 

@@ -3,7 +3,7 @@ package com.chl.excel.configure;
 import com.chl.excel.annotation.Excel;
 import com.chl.excel.annotation.ExcelColumn;
 import com.chl.excel.entity.ExcelColumnConf;
-import com.chl.excel.exception.RepeatOrderExcetion;
+import com.chl.excel.exception.RepeatOrderException;
 import com.chl.excel.util.ReflectUtils;
 
 import java.lang.annotation.Annotation;
@@ -22,7 +22,7 @@ import java.util.Set;
 public abstract class ExcelConfigureUtil {
 
 
-    public static ExcelColumnConf[] getExcelColumnConfiguration(Class clazz) throws RepeatOrderExcetion {
+    public static ExcelColumnConf[] getExcelColumnConfiguration(Class clazz) throws RepeatOrderException {
 
         List<Field> fields = ReflectUtils.getSpecifiedAnnotationFields(clazz, ExcelColumn.class);
         List<Method> methods = ReflectUtils.getSpecifiedAnnotationMethods(clazz, ExcelColumn.class);
@@ -45,7 +45,7 @@ public abstract class ExcelConfigureUtil {
         return annotation.version();
     }
 
-    private static ExcelColumnConf[] getExcelColumnMethodArray(Class clazz, List<Method> methods, ExcelColumnConf[] conf, Integer startIndex) throws RepeatOrderExcetion {
+    private static ExcelColumnConf[] getExcelColumnMethodArray(Class clazz, List<Method> methods, ExcelColumnConf[] conf, Integer startIndex) throws RepeatOrderException {
 
 
         Set<Integer> orderSets = new HashSet();
@@ -58,7 +58,7 @@ public abstract class ExcelConfigureUtil {
             currIndex = i + startIndex;
             if (order > -1) {
                 if (orderSets.contains(order)) {
-                    throw new RepeatOrderExcetion("the order must not be repeated, the repeat order is " + order + "in the method [" + method.getName() + "]"
+                    throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order + "in the method [" + method.getName() + "]"
                             + "which same as " + conf[order].getAnnotationField() != null ? "field [" + conf[order].getAnnotationField().getName() + "]" : "method [" + conf[order].getAnnotationMethod().getName() + "]");
                 }
                 orderSets.add(order);
@@ -79,7 +79,7 @@ public abstract class ExcelConfigureUtil {
         return conf;
     }
 
-    private static ExcelColumnConf[] getExcelColumnFieldArray(Class clazz, List<Field> fields, ExcelColumnConf[] conf) throws RepeatOrderExcetion {
+    private static ExcelColumnConf[] getExcelColumnFieldArray(Class clazz, List<Field> fields, ExcelColumnConf[] conf) throws RepeatOrderException {
 
 
         Set<Integer> orderSets = new HashSet();
@@ -91,7 +91,7 @@ public abstract class ExcelConfigureUtil {
             Integer order = excelColumn.order();
             if (order > -1) {
                 if (orderSets.contains(order)) {
-                    throw new RepeatOrderExcetion("the order must not be repeated, the repeat order is " + order
+                    throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order
                             + "in the field [" + field.getName() + "],which same as the field [" + conf[order].getAnnotationField().getName() + "]");
                 }
                 orderSets.add(order);

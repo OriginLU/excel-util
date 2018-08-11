@@ -5,9 +5,9 @@ package com.chl.excel.exception;
  * @author LCH
  * @since 2018-06-28
  */
-public class RepeatOrderExcetion extends Exception {
+public class RepeatOrderException extends RuntimeException {
 
-    public RepeatOrderExcetion(String message) {
+    public RepeatOrderException(String message) {
         super(message);
     }
 }

@@ -48,6 +48,6 @@ public class ExcelColumnConf{
         if (this.annotations == null){
             this.annotations = new HashMap();
         }
-        this.annotations.put(ans.getClass(),ans);
+        this.annotations.put(ans.annotationType(),ans);
     }
 }
