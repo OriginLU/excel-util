@@ -48,7 +48,7 @@ public abstract class ExcelUtils {
 
         int rowNum = createTitleRow(workbook,sheet,titleName,length);
         rowNum = createColumnName(workbook,sheet,conf,rowNum);
-        CountDownLatch latch = new CountDownLatch(length - 1);
+        CountDownLatch latch = new CountDownLatch(length);
         for (int i = rowNum , j = 0; i < length; i++ , j++) {
 //            createDataRow(sheet.createRow(i), list.get(j), conf);
             createRowTask(sheet.createRow(i), list.get(j), conf,latch);
