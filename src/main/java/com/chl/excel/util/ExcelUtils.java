@@ -12,15 +12,19 @@ import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.*;
 
 /**
  * @author LCH
@@ -29,12 +33,27 @@ import java.util.concurrent.ConcurrentMap;
 public abstract class ExcelUtils {
 
 
+    private  static Logger          log         =        LoggerFactory.getLogger(ExcelUtils.class);
+
+
     private static int CELL_WIDTH = 20;
+
+    private static int SHEET_COUNT  =   500;
 
     private static ConcurrentMap<String, CellStyle> CELL_STYLE = new ConcurrentHashMap();
 
+    private static Sequence  sequence                          = new Sequence(1l,1l);
+
+
+
+    public static Workbook createExcel(List list, Class type) {
+
+        return createExcel(list,type,true,true);
+    }
+
     public static Workbook createExcel(List list, Class type, boolean isCreateTitle, boolean isCreateColumnName) {
 
+        log.info("===============create excel===============");
         if (type.getAnnotation(Excel.class) == null) {
 
         }
@@ -50,7 +69,7 @@ public abstract class ExcelUtils {
         rowNum = createTitleRow(workbook, sheet, titleName, conf.length, isCreateTitle);
         rowNum = createColumnName(workbook, sheet, conf, rowNum, isCreateColumnName);
 
-        for (int i = rowNum, j = 0; i < length; i++, j++) {
+        for (int i = rowNum, j = 0; j < length; i++, j++) {
             createDataRow(sheet.createRow(i), list.get(j), conf);
         }
         return workbook;
@@ -120,6 +139,169 @@ public abstract class ExcelUtils {
     }
 
 
+
+    private static class ExecutorFactory{
+
+        private static ExecutorService executorService;
+
+        private static int coreCount = Runtime.getRuntime().availableProcessors();
+
+        public static synchronized ExecutorService getInstance(){
+
+            if (executorService != null){
+                return executorService;
+            }
+            executorService = Executors.newFixedThreadPool(coreCount,new ExecutorThreadFactory());
+            return executorService;
+        }
+
+        public static synchronized void close(){
+
+            if (executorService != null && executorService.isShutdown()){
+                executorService.shutdown();
+            }
+        }
+
+        /**
+         * when you use the {@link ExecutorService#execute(Runnable)}
+         * throw exception will be catch by the handler for exception
+         */
+        private static class ExecutorExceptionHandler implements Thread.UncaughtExceptionHandler{
+
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                log.error(t.getName() + " : ",e);
+            }
+        }
+
+        /**
+         * create thread factory for exception
+         */
+        private static class ExecutorThreadFactory implements ThreadFactory {
+
+            public Thread newThread(Runnable r) {
+                log.info("create ExecutorThreadFactory");
+                Thread t = new Thread(r);
+                t.setUncaughtExceptionHandler(new ExecutorExceptionHandler());
+                return t;
+            }
+        }
+    }
+
+
+
+
+    public static void close(){
+        ExecutorFactory.close();
+    }
+
+    public static Workbook createExcelAdvance(final List list, final Class type){
+
+        ExecutorService executorService = ExecutorFactory.getInstance();
+        List<Future<String>> futures = new ArrayList();
+
+        final String path = getSystemPath();
+        String temp = sequence.nextId().toString();             // create temp file name by sequence,it should be only one 
+        int cycleCount = getCycleCount(list.size());
+        for (int i = 0; i < cycleCount; i++) {
+            final List nextList = getNextList(list, i);
+            final String name = path + temp + "_" +  i + ".xls";
+            Future<String> future = executorService.submit(createCallableTask(nextList,type,name));
+            futures.add(future);
+        }
+        for (Future<String> future : futures) {
+
+            try {
+                future.get();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+//        return getWorkBook(futures,type);
+
+    }
+
+    private static Callable<String> createCallableTask(final List list, final Class type, final String name){
+
+        return new Callable<String>() {
+            @Override
+            public String call(){
+                try {
+                    Workbook excel = createExcel(list, type);
+                    FileOutputStream fos = new FileOutputStream(name);
+                    excel.write(fos);
+                    fos.flush();
+                    fos.close();
+                    return name;
+                }catch (IOException e){
+                    log.error("create file error : ",e);
+                    throw new ExcelCreateException("create file error : ",e);
+                }
+            }
+        };
+    }
+
+    private static String getSystemPath() {
+        return "d:/excel/";
+//        return System.getProperty("java.io.tmpdir");
+    }
+
+    public static void main(String[] args){
+
+        ExecutorService instance = ExecutorFactory.getInstance();
+
+
+        instance.execute(new Runnable() {
+            @Override
+            public void run() {
+                int i = 1/0;
+            }
+        });
+        instance.shutdown();
+
+    }
+
+    private static Workbook getWorkBook(List<Future<Workbook>> futures, Class type) {
+
+        try {
+            String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
+            Workbook workBook = WorkBookFactory.createWorkBook(excelVersion);
+            for (Future<Workbook> future : futures) {
+
+                Workbook wk = future.get();
+                int numberOfSheets = wk.getNumberOfSheets();
+                for (int i = 0; i < numberOfSheets; i++) {
+                    Sheet sheet = wk.getSheetAt(i);
+                    Sheet copySheet = workBook.createSheet(sheet.getSheetName());
+                }
+            }
+            return null;
+        }catch (Exception e){
+            log.error("create excel error : " ,e);
+            throw new ExcelCreateException("create excel error : ", e);
+        }
+    }
+
+    private static List getNextList(List list,int index){
+
+        int length = list.size();                           // collection size
+        int startIndex = index * SHEET_COUNT;
+        int endIndex = startIndex + SHEET_COUNT;
+        endIndex = length > endIndex ? endIndex : length;
+        return list.subList(startIndex, endIndex);
+    }
+
+    private static int getCycleCount(int size) {
+
+        int cycleCount = 0;
+        if ((size % SHEET_COUNT) != 0){
+            return (size / SHEET_COUNT) + 1;
+        }
+        return (size / SHEET_COUNT);
+    }
+
+
     /**
      * 设置单元格样式
      *
@@ -172,6 +354,7 @@ public abstract class ExcelUtils {
                 row.createCell(i).setCellValue(convertToString(result, config.getAnnotations()));
             }
         } catch (InvocationTargetException e) {
+            log.error("invoke method throw exception : ", e);
             throw new ExcelCreateException("invoke method error ", e);
         }
     }
