@@ -26,6 +26,7 @@
 
         <profile>
             <id>pack</id>
+            <!-- ==配置打包时的默认配置== -->
             <build>
                 <resources>
                     <resource>
@@ -38,6 +39,7 @@
                     </resource>
                 </resources>
             </build>
+
             <activation>
                 <property>
                     <name>packProfile</name>
@@ -64,18 +66,6 @@
 
 
     <dependencies>
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-            <version>3.8</version>
-        </dependency>
-
-        <!--表达式求值引擎-->
-        <dependency>
-            <groupId>com.googlecode.aviator</groupId>
-            <artifactId>aviator</artifactId>
-            <version>2.3.3</version>
-        </dependency>
 
         <dependency>
             <groupId>junit</groupId>
@@ -84,17 +74,28 @@
             <scope>test</scope>
         </dependency>
 
+        <!--表达式求值引擎-->
+        <dependency>
+            <groupId>com.googlecode.aviator</groupId>
+            <artifactId>aviator</artifactId>
+            <version>2.3.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>3.8</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.4</version>
         </dependency>
-
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.7.5</version>
         </dependency>
+
     </dependencies>
 
 
