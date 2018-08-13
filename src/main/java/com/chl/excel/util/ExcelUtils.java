@@ -150,7 +150,7 @@ public abstract class ExcelUtils {
 
         public static synchronized ExecutorService getInstance(){
 
-            if (executorService != null){
+            if (executorService != null && !executorService.isShutdown()){
                 return executorService;
             }
             executorService = Executors.newFixedThreadPool(coreCount,new ExecutorThreadFactory());
