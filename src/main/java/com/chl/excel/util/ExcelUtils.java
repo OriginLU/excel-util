@@ -185,6 +185,12 @@ public abstract class ExcelUtils {
         ExecutorFactory.close();
     }
 
+    /**
+     * 不推荐使用版本
+     * @param list
+     * @param type
+     * @return
+     */
     public static Workbook createExcelAdvance(final List list, final Class type) {
 
         List<Future<Workbook>> futures = new ArrayList();
