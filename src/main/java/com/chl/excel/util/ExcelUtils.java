@@ -11,21 +11,19 @@ import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * @author LCH
@@ -38,10 +36,83 @@ public abstract class ExcelUtils {
 
     private static int CELL_WIDTH = 20;
 
-    private static int SHEET_COUNT = 1000;
+    private static int SHEET_COUNT = 500;
 
     private static Sequence sequence = new Sequence(1l, 1l);
 
+
+
+    public static Workbook createExcelAdvance(List list, Class type){
+
+        if (type.getAnnotation(Excel.class) == null) {
+
+        }
+        int length = list.size();
+        String titleName = ExcelConfigureUtil.getExcelTitleName(type);
+        String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
+        ExcelColumnConf[] conf = ExcelConfigureUtil.getExcelColumnConfiguration(type);
+        Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
+
+        Sheet sheet = workbook.createSheet(titleName);
+        sheet.setDefaultColumnWidth(CELL_WIDTH);
+
+        int rowNum = createTitleRow(workbook,sheet,titleName,conf.length,true);
+        rowNum = createColumnName(workbook,sheet,conf,rowNum,true);
+
+        int cycleCount = getCycleCount(length);
+        CountDownLatch latch = new CountDownLatch(cycleCount);
+
+        for (int i = rowNum , j = 0; j < cycleCount; i++ , j++) {
+            int start = getStartIndex(cycleCount,i);
+            int end = getEndIndex(cycleCount,length,i);
+            createRowTask(sheet, list.get(j),conf,latch,start,end);
+        }
+        return getWorkBook(workbook,latch);
+    }
+
+    private static int getEndIndex(int cycleCount, int length, int i) {
+        int end = cycleCount * i + SHEET_COUNT;
+        return length <= end?  length : end;
+    }
+
+    private static int getStartIndex(int cycleCount, int i) {
+        return i*cycleCount;
+    }
+
+
+    private static Workbook getWorkBook(Workbook workbook, CountDownLatch latch) {
+
+        try {
+            latch.await();
+            return workbook;
+        }catch (InterruptedException e){
+            throw new ExcelCreateException("",e);
+        }
+    }
+
+
+    private static void createRowTask(final Sheet sheet, final Object obj, final ExcelColumnConf[] configs,final CountDownLatch latch,final int start,final int end){
+
+        ExecutorService executorService = ExecutorFactory.getInstance();
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    for (int i = start; i < end; i++) {
+                        Row row = getRow(sheet, i);
+                        createDataRow(row,obj,configs);
+                    }
+                }finally {
+                    latch.countDown();
+                }
+            }
+        });
+    }
+
+    public static synchronized Row getRow(Sheet sheet,int index){
+        Row row = sheet.createRow(index);
+        return row;
+    }
 
     public static Workbook createExcel(List list, Class type) {
         log.info(Thread.currentThread().getName() + " : invoke create excel");
@@ -185,86 +256,6 @@ public abstract class ExcelUtils {
         ExecutorFactory.close();
     }
 
-    /**
-     * 不推荐使用版本，实测单线程效率比多线程使用效率高很多
-     * @param list
-     * @param type
-     * @return
-     */
-    public static Workbook createExcelAdvance(final List list, final Class type) {
-
-        List<Future<Workbook>> futures = new ArrayList();
-        ExecutorService executorService = ExecutorFactory.getInstance();
-        String temp = sequence.nextId().toString();             // create temp file name by sequence,it should be only one
-        int cycleCount = getCycleCount(list.size());
-
-        for (int i = 0; i < cycleCount; i++) {
-            final List nextList = getNextList(list, i);
-            Future future = executorService.submit(createCallableTask(nextList, type));
-            futures.add(future);
-        }
-        return getWorkBook(futures, type);
-
-    }
-
-
-
-    private static Callable<Workbook> createCallableTask(final List list, final Class type) {
-
-        return new Callable<Workbook>() {
-            @Override
-            public Workbook call() {
-                return createExcel(list, type);
-            }
-        };
-    }
-
-
-    private static Callable<String> createCallableTask(final List list, final Class type, final String name) {
-
-        return new Callable<String>() {
-            @Override
-            public String call() {
-                try {
-                    Workbook excel = createExcel(list, type);
-                    FileOutputStream fos = new FileOutputStream(name);
-                    excel.write(fos);
-                    fos.flush();
-                    fos.close();
-                    return name;
-                } catch (IOException e) {
-                    log.error("create file error : ", e);
-                    throw new ExcelCreateException("create file error : ", e);
-                }
-            }
-        };
-    }
-
-    private static Workbook getWorkBook(List<Future<Workbook>> futures, Class type) {
-
-        try {
-            String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
-            String excelTitleName = ExcelConfigureUtil.getExcelTitleName(type);
-            Workbook toWorkBook = WorkBookFactory.createWorkBook(excelVersion);
-            for (int i = 0; i < futures.size(); i++) {
-                Workbook fromWorkBook = futures.get(i).get();
-                mergeExcel(fromWorkBook, toWorkBook, excelTitleName + "_" + i);
-            }
-            return toWorkBook;
-        } catch (Exception e) {
-            log.error("create excel error : ", e);
-            throw new ExcelCreateException("create excel error : ", e);
-        }
-    }
-
-    private static List getNextList(List list, int index) {
-
-        int length = list.size();                           // collection size
-        int startIndex = index * SHEET_COUNT;
-        int endIndex = startIndex + SHEET_COUNT;
-        endIndex = length > endIndex ? endIndex : length;
-        return list.subList(startIndex, endIndex);
-    }
 
     private static int getCycleCount(int size) {
 
@@ -307,7 +298,6 @@ public abstract class ExcelUtils {
     private static void createDataRow(Row row, Object obj, ExcelColumnConf[] configs) {
 
         try {
-
             Object result = null;
             for (int i = 0, length = configs.length; i < length; i++) {
                 ExcelColumnConf config = configs[i];
@@ -319,12 +309,16 @@ public abstract class ExcelUtils {
                 if (method != null) {
                     result = ReflectUtils.invokeMethod(obj, method);
                 }
-                row.createCell(i).setCellValue(convertToString(result, config.getAnnotations()));
+                setCell(row,result,config,i);
             }
         } catch (InvocationTargetException e) {
             log.error("invoke method throw exception : ", e);
             throw new ExcelCreateException("invoke method error ", e);
         }
+    }
+
+    private static synchronized void setCell(Row row,Object result,ExcelColumnConf config,int index){
+        row.createCell(index).setCellValue(convertToString(result, config.getAnnotations()));
     }
 
     private static String convertToString(Object result, Map<Class, Annotation> ans) {
@@ -345,112 +339,5 @@ public abstract class ExcelUtils {
         cellStyle.setFont(font);
 
         return cellStyle;
-    }
-
-
-    private static void mergeExcel(Workbook toWorkBook, String path) {
-
-        try {
-            File file = new File(path);
-            if (file.exists()) {
-                String name = file.getName();
-                name = name.substring(0, name.indexOf("."));
-                InputStream in = new FileInputStream(path);
-                XSSFWorkbook fromWorkBook = new XSSFWorkbook(in);
-                for (int i = 0; i < fromWorkBook.getNumberOfSheets(); i++) {//遍历每个sheet
-                    Sheet oldSheet = fromWorkBook.getSheetAt(i);
-                    Sheet newSheet = toWorkBook.createSheet(name);
-                    copySheet(toWorkBook, oldSheet, newSheet);
-                }
-                file.delete();
-            }
-        } catch (Exception e) {
-            throw new ExcelCreateException("create excel error", e);
-        }
-    }
-
-    private static void mergeExcel(Workbook fromWorkBook, Workbook toWorkBook, String sheetName) {
-
-        try {
-            for (int i = 0; i < fromWorkBook.getNumberOfSheets(); i++) {
-                Sheet oldSheet = fromWorkBook.getSheetAt(i);
-                Sheet newSheet = toWorkBook.createSheet(sheetName);
-                copySheet(toWorkBook, oldSheet, newSheet);
-            }
-        } catch (Exception e) {
-            throw new ExcelCreateException("create excel error", e);
-        }
-    }
-
-
-    private class XSSFDateUtil extends DateUtil {
-
-    }
-
-
-    private static void copySheet(Workbook wb, Sheet fromSheet, Sheet toSheet) {
-        mergeSheetAllRegion(fromSheet, toSheet);
-        for (int i = 0; i <= fromSheet.getRow(fromSheet.getFirstRowNum()).getLastCellNum(); i++) {
-            toSheet.setColumnWidth(i, fromSheet.getColumnWidth(i));
-        }
-        for (Iterator rowIt = fromSheet.rowIterator(); rowIt.hasNext(); ) {
-            Row oldRow = (Row) rowIt.next();
-            Row newRow = toSheet.createRow(oldRow.getRowNum());
-            copyRow(wb, oldRow, newRow);
-        }
-    }
-
-    private static void mergeSheetAllRegion(Sheet fromSheet, Sheet toSheet) {//合并单元格
-        int num = fromSheet.getNumMergedRegions();
-        CellRangeAddress cellR = null;
-        for (int i = 0; i < num; i++) {
-            cellR = fromSheet.getMergedRegion(i);
-            toSheet.addMergedRegion(cellR);
-        }
-    }
-
-    private static void copyCell(Workbook wb, Cell fromCell, Cell toCell) {
-        CellStyle newStyle = wb.createCellStyle();
-        copyCellStyle(fromCell.getCellStyle(), newStyle);
-        toCell.setCellStyle(newStyle);
-        if (fromCell.getCellComment() != null) {
-            toCell.setCellComment(fromCell.getCellComment());
-        }
-        int fromCellType = fromCell.getCellType();
-        toCell.setCellType(fromCellType);
-        if (fromCellType == XSSFCell.CELL_TYPE_NUMERIC) {
-            if (XSSFDateUtil.isCellDateFormatted(fromCell)) {
-                toCell.setCellValue(fromCell.getDateCellValue());
-            } else {
-                toCell.setCellValue(fromCell.getNumericCellValue());
-            }
-        } else if (fromCellType == XSSFCell.CELL_TYPE_STRING) {
-            toCell.setCellValue(fromCell.getRichStringCellValue());
-        } else if (fromCellType == XSSFCell.CELL_TYPE_BLANK) {
-
-        } else if (fromCellType == XSSFCell.CELL_TYPE_BOOLEAN) {
-            toCell.setCellValue(fromCell.getBooleanCellValue());
-        } else if (fromCellType == XSSFCell.CELL_TYPE_ERROR) {
-            toCell.setCellErrorValue(fromCell.getErrorCellValue());
-        } else if (fromCellType == XSSFCell.CELL_TYPE_FORMULA) {
-            toCell.setCellFormula(fromCell.getCellFormula());
-        } else {
-        }
-
-    }
-
-
-    private static void copyRow(Workbook wb, Row oldRow, Row toRow) {
-        toRow.setHeight(oldRow.getHeight());
-        for (Iterator cellIt = oldRow.cellIterator(); cellIt.hasNext(); ) {
-            Cell tmpCell = (XSSFCell) cellIt.next();
-            Cell newCell = toRow.createCell(tmpCell.getColumnIndex());
-            copyCell(wb, tmpCell, newCell);
-        }
-    }
-
-    private static void copyCellStyle(CellStyle fromStyle, CellStyle toStyle) {
-
-        toStyle.cloneStyleFrom(fromStyle);//此一行代码搞定
     }
 }
