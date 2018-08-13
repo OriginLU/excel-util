@@ -186,7 +186,7 @@ public abstract class ExcelUtils {
     }
 
     /**
-     * 不推荐使用版本
+     * 不推荐使用版本，实测单线程效率比多线程使用效率高很多
      * @param list
      * @param type
      * @return
