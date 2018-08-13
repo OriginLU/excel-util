@@ -13,6 +13,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * 获取excel配置信息
@@ -22,13 +24,20 @@ import java.util.Set;
 public abstract class ExcelConfigureUtil {
 
 
+    private static ConcurrentMap<Class,ExcelColumnConf[]>   EXCEL_CONFIGURE =   new ConcurrentHashMap();
+
     public static ExcelColumnConf[] getExcelColumnConfiguration(Class clazz) throws RepeatOrderException {
 
+        ExcelColumnConf[] array;
+        if ((array = EXCEL_CONFIGURE.get(clazz)) != null){
+            return array;
+        }
         List<Field> fields = ReflectUtils.getSpecifiedAnnotationFields(clazz, ExcelColumn.class);
         List<Method> methods = ReflectUtils.getSpecifiedAnnotationMethods(clazz, ExcelColumn.class);
-        ExcelColumnConf[] array = new ExcelColumnConf[fields.size() + methods.size()];
+        array = new ExcelColumnConf[fields.size() + methods.size()];
         array = getExcelColumnFieldArray(clazz, fields, array);
         array = getExcelColumnMethodArray(clazz, methods, array, fields.size());
+        EXCEL_CONFIGURE.putIfAbsent(clazz,array);
         return array;
 
     }
