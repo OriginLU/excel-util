@@ -38,7 +38,7 @@ public abstract class ExcelUtils {
 
     private static int CELL_WIDTH = 20;
 
-    private static int SHEET_COUNT = 300;
+    private static int SHEET_COUNT = 1000;
 
     private static Sequence sequence = new Sequence(1l, 1l);
 
