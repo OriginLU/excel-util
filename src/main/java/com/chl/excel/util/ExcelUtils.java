@@ -139,7 +139,9 @@ public abstract class ExcelUtils {
     }
 
 
-
+    /**
+     * create executor service by ExecutorFactory
+     */
     private static class ExecutorFactory{
 
         private static ExecutorService executorService;
@@ -180,7 +182,6 @@ public abstract class ExcelUtils {
         private static class ExecutorThreadFactory implements ThreadFactory {
 
             public Thread newThread(Runnable r) {
-                log.info("create ExecutorThreadFactory");
                 Thread t = new Thread(r);
                 t.setUncaughtExceptionHandler(new ExecutorExceptionHandler());
                 return t;
@@ -201,7 +202,7 @@ public abstract class ExcelUtils {
         List<Future<String>> futures = new ArrayList();
 
         final String path = getSystemPath();
-        String temp = sequence.nextId().toString();             // create temp file name by sequence,it should be only one 
+        String temp = sequence.nextId().toString();             // create temp file name by sequence,it should be only one
         int cycleCount = getCycleCount(list.size());
         for (int i = 0; i < cycleCount; i++) {
             final List nextList = getNextList(list, i);
@@ -249,16 +250,6 @@ public abstract class ExcelUtils {
 
     public static void main(String[] args){
 
-        ExecutorService instance = ExecutorFactory.getInstance();
-
-
-        instance.execute(new Runnable() {
-            @Override
-            public void run() {
-                int i = 1/0;
-            }
-        });
-        instance.shutdown();
 
     }
 
@@ -268,7 +259,6 @@ public abstract class ExcelUtils {
             String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
             Workbook workBook = WorkBookFactory.createWorkBook(excelVersion);
             for (Future<Workbook> future : futures) {
-
                 Workbook wk = future.get();
                 int numberOfSheets = wk.getNumberOfSheets();
                 for (int i = 0; i < numberOfSheets; i++) {
