@@ -20,13 +20,14 @@ public class TestDemo {
     public void testExcelUtil(){
 
         ArrayList arrayList = new ArrayList();
-        for (int i = 0; i < 2000; i++) {
+        for (int i = 0; i < 60000; i++) {
 
             Demo demo = new Demo();
             demo.setName("Test" + i);
             demo.setId(i + "");
             arrayList.add(demo);
         }
+        long currentTimeMillis = System.currentTimeMillis();
         Workbook excel = ExcelUtils.createExcel(arrayList, Demo.class);
         try {
             FileOutputStream outputStream = new FileOutputStream("D:/excel.xls");
@@ -37,5 +38,6 @@ public class TestDemo {
             e.printStackTrace();
         }
         System.out.println(excel);
+        System.out.println(System.currentTimeMillis() - currentTimeMillis);
     }
 }
