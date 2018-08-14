@@ -10,18 +10,21 @@ import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
 
 /**
  * because of poi as the tool of excel for operation is not be safe in the multi thread,
@@ -38,16 +41,19 @@ public abstract class ExcelUtils {
 
     private static int CELL_WIDTH = 20;
 
+    private static int SHEET_COUNT = 1000;
+
+    private static Sequence sequence = new Sequence(1l, 1l);
 
 
     public static Workbook createExcel(List list, Class type) {
 
-        paramsCheck(list,type);
+        paramsCheck(list, type);
         ExcelColumnConf[] conf = ExcelConfigureUtil.getExcelColumnConfiguration(type);
         String titleName = ExcelConfigureUtil.getExcelTitleName(type);
         String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
         Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
-        Sheet sheet = createSheet(workbook,titleName);
+        Sheet sheet = createSheet(workbook, titleName);
         int rowIndex = createTitleRow(workbook, sheet, titleName, conf.length);
         rowIndex = createColumnNameRow(workbook, sheet, conf, rowIndex);
         createContentRow(workbook, sheet, list, conf, rowIndex);
@@ -63,13 +69,14 @@ public abstract class ExcelUtils {
 
     private static Sheet createSheet(Workbook workbook, String titleName) {
 
-         Sheet sheet = workbook.createSheet(titleName);
+        Sheet sheet = workbook.createSheet(titleName);
         sheet.setDefaultColumnWidth(CELL_WIDTH);
         return sheet;
     }
 
     /**
      * create cell data for per row
+     *
      * @param workbook
      * @param sheet
      * @param list
@@ -78,43 +85,52 @@ public abstract class ExcelUtils {
      */
     private static void createContentRow(Workbook workbook, Sheet sheet, List list, ExcelColumnConf[] configs, int rowNum) {
 
-        try {
-            int length = list.size();
-            int columnLength = configs.length;
-            CellStyle cellStyle = getCellStyle(workbook);
 
-            for (int rowIndex = rowNum, dataIndex = 0; dataIndex < length; rowIndex++, dataIndex++) {
-                Row row = sheet.createRow(rowIndex);
-                Object obj = list.get(dataIndex);
-                for (int cellIndex = 0; cellIndex < columnLength; cellIndex++) { //create cell for row
-                    ExcelColumnConf config = configs[cellIndex];
-                    Object result = getResult(config, obj);
-                    Cell cell = row.createCell(cellIndex);
-                    cell.setCellStyle(cellStyle);
-                    cell.setCellValue(convertToString(result, config.getAnnotations()));
-                }
+        int length = list.size();
+        int columnLength = configs.length;
+        CellStyle cellStyle = getCellStyle(workbook);
+
+        for (int rowIndex = rowNum, dataIndex = 0; dataIndex < length; rowIndex++, dataIndex++) {
+            Row row = sheet.createRow(rowIndex);
+            Object obj = list.get(dataIndex);
+            for (int cellIndex = 0; cellIndex < columnLength; cellIndex++) { //create cell for row
+                ExcelColumnConf config = configs[cellIndex];
+                Object result = getResult(config, obj);
+                Cell cell = row.createCell(cellIndex);
+                cell.setCellStyle(cellStyle);
+                cell.setCellValue(convertToString(result, config.getAnnotations()));
             }
-        } catch (InvocationTargetException e) {
-            log.error("invoke method throw exception : ", e);
-            throw new ExcelCreateException("invoke method error ", e);
         }
+
     }
 
-    private static Object getResult(ExcelColumnConf config, Object obj) throws InvocationTargetException {
-
-        Field field = config.getAnnotationField();
-        if (field != null) {
-            return ReflectUtils.getFieldValue(obj, field);
+    private static String convertToString(Object result, Map<Class, Annotation> ans) {
+        if (result == null) {
+            return "";
         }
-        Method method = config.getAnnotationMethod();
-        if (method != null) {
-            return ReflectUtils.invokeMethod(obj, method);
+        return result.toString();
+    }
+
+    private static Object getResult(ExcelColumnConf config, Object obj) {
+
+        try {
+            Field field = config.getAnnotationField();
+            if (field != null) {
+                return ReflectUtils.getFieldValue(obj, field);
+            }
+            Method method = config.getAnnotationMethod();
+            if (method != null) {
+                return ReflectUtils.invokeMethod(obj, method);
+            }
+        } catch (InvocationTargetException e) {
+            throw new ExcelCreateException("create excel error ", e);
         }
         return null;
     }
 
     /**
      * create column name for excel
+     *
      * @param workbook
      * @param sheet
      * @param configs
@@ -135,20 +151,21 @@ public abstract class ExcelUtils {
         return (rowNum + 1);
     }
 
-    private static String getColumnName(ExcelColumnConf conf){
+    private static String getColumnName(ExcelColumnConf conf) {
 
         Map<Class, Annotation> annotations = conf.getAnnotations();
         ExcelColumn excelColumn = (ExcelColumn) annotations.get(ExcelColumn.class);
         String columnName = excelColumn.columnTitle();
-        if (StringUtils.isBlank(columnName)){
-            Field annotationField = conf.getAnnotationField();
-            return annotationField.getName();
+        if (StringUtils.isBlank(columnName)) {
+            Field field = conf.getAnnotationField();
+            return field.getName();
         }
         return columnName;
     }
 
     /**
      * create title
+     *
      * @param book
      * @param sheet
      * @param titleName
@@ -224,13 +241,6 @@ public abstract class ExcelUtils {
         return cellStyle;
     }
 
-    private static String convertToString(Object result, Map<Class, Annotation> ans) {
-        if (result == null) {
-            return "";
-        }
-        return result.toString();
-    }
-
 
     private static CellStyle getCellStyle(Workbook workbook) {
 
@@ -242,6 +252,197 @@ public abstract class ExcelUtils {
         cellStyle.setFont(font);
 
         return cellStyle;
+    }
+
+    /**
+     * the excel files is created by multi thread
+     * @param list
+     * @param type
+     * @return
+     */
+    public static String createExcelAdvance(final List list, final Class type) {
+
+        List futures = new ArrayList();
+        ExecutorService executorService = ExecutorFactory.getInstance();
+        String temp = sequence.nextId().toString();
+        int cycleCount = getCycleCount(list.size());
+        String sysPath = getSystemPath(temp);
+        for (int i = 0; i < cycleCount; i++) {
+            final String path = sysPath + temp + "_" + i + ".xls";
+            futures.add(path);
+            final List nextList = getNextList(list, i);
+            executorService.execute(createRunnable(nextList, type,path));
+        }
+        executorService.shutdown();
+        return sysPath;
+    }
+
+
+    private static String getSystemPath(String temp) {
+
+        String path = "d:/excel/" + temp;
+//        String path = System.getProperty("java.io.tmpdir");
+        path = path.lastIndexOf('/') > 0 ? (path + temp) : (path + File.separator + temp);
+        File file = new File(path);
+        if (!file.exists()){
+            file.mkdirs();
+        }
+        return file.getAbsolutePath() + File.separator;
+    }
+
+    private static Runnable createRunnable(final List list, final Class type,final String path){
+
+        return new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Workbook excel = createExcel(list, type);
+                    FileOutputStream outputStream = new FileOutputStream(path);
+                    excel.write(outputStream);
+                    outputStream.flush();
+                    outputStream.close();
+                }catch (Exception e){
+                    throw new ExcelCreateException("create excel error : ", e);
+                }
+            }
+        };
+    }
+
+    private static Callable<Workbook> createCallable(final List list, final Class type) {
+
+        return new Callable<Workbook>() {
+            @Override
+            public Workbook call() {
+                return createExcel(list, type);
+            }
+        };
+    }
+
+    private static List getNextList(List list, int index) {
+
+        int length = list.size();                           // collection size
+        int startIndex = index * SHEET_COUNT;
+        int endIndex = startIndex + SHEET_COUNT;
+        endIndex = length > endIndex ? endIndex : length;
+        return list.subList(startIndex, endIndex);
+    }
+
+    private static int getCycleCount(int size) {
+
+        int cycleCount = 0;
+        if ((size % SHEET_COUNT) != 0) {
+            return (size / SHEET_COUNT) + 1;
+        }
+        return (size / SHEET_COUNT);
+    }
+
+    private static Workbook getWorkBook(List<Future<Workbook>> futures, Class type) {
+
+        try {
+            String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
+            String excelTitleName = ExcelConfigureUtil.getExcelTitleName(type);
+            Workbook toWorkBook = WorkBookFactory.createWorkBook(excelVersion);
+            for (int i = 0; i < futures.size(); i++) {
+                Workbook fromWorkBook = futures.get(i).get();
+                mergeExcel(fromWorkBook, toWorkBook, excelTitleName + "_" + i);
+            }
+            return toWorkBook;
+        } catch (Exception e) {
+            log.error("create excel error : ", e);
+            throw new ExcelCreateException("create excel error : ", e);
+        } finally {
+            ExecutorFactory.close();
+        }
+    }
+
+    /**
+     * merge excel
+     * @param fromWorkBook
+     * @param toWorkBook
+     * @param sheetName
+     */
+    public static void mergeExcel(Workbook fromWorkBook, Workbook toWorkBook, String sheetName) {
+
+        try {
+            for (int i = 0; i < fromWorkBook.getNumberOfSheets(); i++) {
+                Sheet oldSheet = fromWorkBook.getSheetAt(i);
+                Sheet newSheet = toWorkBook.createSheet(sheetName);
+                copySheet(toWorkBook, oldSheet, newSheet);
+            }
+        } catch (Exception e) {
+            throw new ExcelCreateException("create excel error", e);
+        }
+    }
+
+    private class XSSFDateUtil extends DateUtil {
+
+    }
+
+
+    private static void copySheet(Workbook wb, Sheet fromSheet, Sheet toSheet) {
+        mergeSheetAllRegion(fromSheet, toSheet);
+        for (int i = 0; i <= fromSheet.getRow(fromSheet.getFirstRowNum()).getLastCellNum(); i++) {
+            toSheet.setColumnWidth(i, fromSheet.getColumnWidth(i));
+        }
+        for (Iterator rowIt = fromSheet.rowIterator(); rowIt.hasNext(); ) {
+            Row oldRow = (Row) rowIt.next();
+            Row newRow = toSheet.createRow(oldRow.getRowNum());
+            copyRow(wb, oldRow, newRow);
+        }
+    }
+
+    private static void mergeSheetAllRegion(Sheet fromSheet, Sheet toSheet) {//合并单元格
+        int num = fromSheet.getNumMergedRegions();
+        CellRangeAddress cellR = null;
+        for (int i = 0; i < num; i++) {
+            cellR = fromSheet.getMergedRegion(i);
+            toSheet.addMergedRegion(cellR);
+        }
+    }
+
+    private static void copyCell(Workbook wb, Cell fromCell, Cell toCell) {
+        CellStyle newStyle = wb.createCellStyle();
+        copyCellStyle(fromCell.getCellStyle(), newStyle);
+        toCell.setCellStyle(newStyle);
+        if (fromCell.getCellComment() != null) {
+            toCell.setCellComment(fromCell.getCellComment());
+        }
+        int fromCellType = fromCell.getCellType();
+        toCell.setCellType(fromCellType);
+        if (fromCellType == XSSFCell.CELL_TYPE_NUMERIC) {
+            if (XSSFDateUtil.isCellDateFormatted(fromCell)) {
+                toCell.setCellValue(fromCell.getDateCellValue());
+            } else {
+                toCell.setCellValue(fromCell.getNumericCellValue());
+            }
+        } else if (fromCellType == XSSFCell.CELL_TYPE_STRING) {
+            toCell.setCellValue(fromCell.getRichStringCellValue());
+        } else if (fromCellType == XSSFCell.CELL_TYPE_BLANK) {
+
+        } else if (fromCellType == XSSFCell.CELL_TYPE_BOOLEAN) {
+            toCell.setCellValue(fromCell.getBooleanCellValue());
+        } else if (fromCellType == XSSFCell.CELL_TYPE_ERROR) {
+            toCell.setCellErrorValue(fromCell.getErrorCellValue());
+        } else if (fromCellType == XSSFCell.CELL_TYPE_FORMULA) {
+            toCell.setCellFormula(fromCell.getCellFormula());
+        } else {
+        }
+
+    }
+
+
+    private static void copyRow(Workbook wb, Row oldRow, Row toRow) {
+        toRow.setHeight(oldRow.getHeight());
+        for (Iterator cellIt = oldRow.cellIterator(); cellIt.hasNext(); ) {
+            Cell tmpCell = (XSSFCell) cellIt.next();
+            Cell newCell = toRow.createCell(tmpCell.getColumnIndex());
+            copyCell(wb, tmpCell, newCell);
+        }
+    }
+
+    private static void copyCellStyle(CellStyle fromStyle, CellStyle toStyle) {
+
+        toStyle.cloneStyleFrom(fromStyle);//此一行代码搞定
     }
 
     /**
