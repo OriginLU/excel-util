@@ -53,7 +53,7 @@ public abstract class ExcelUtils {
         String titleName = ExcelConfigureUtil.getExcelTitleName(type);
         String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
         Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
-        Sheet sheet = createSheet(workbook, titleName);
+        Sheet sheet = createSheet(workbook, titleName,type);
         int rowIndex = createTitleRow(workbook, sheet, titleName, conf.length);
         rowIndex = createColumnNameRow(workbook, sheet, conf, rowIndex);
         createContentRow(workbook, sheet, list, conf, rowIndex);
@@ -67,9 +67,10 @@ public abstract class ExcelUtils {
         }
     }
 
-    private static Sheet createSheet(Workbook workbook, String titleName) {
+    private static Sheet createSheet(Workbook workbook, String titleName,Class type) {
 
-        Sheet sheet = workbook.createSheet(titleName);
+        String sheetName = StringUtils.isBlank(titleName) ? type.getSimpleName() : titleName;
+        Sheet sheet = workbook.createSheet(sheetName);
         sheet.setDefaultColumnWidth(CELL_WIDTH);
         return sheet;
     }
@@ -258,31 +259,42 @@ public abstract class ExcelUtils {
      * the excel files is created by multi thread
      * @param list
      * @param type
-     * @return
+     * @return the created files path
      */
-    public static String createExcelAdvance(final List list, final Class type) {
+    public static String createExcelFiles(final List list, final Class type, Integer sheetCount) {
 
         List futures = new ArrayList();
         ExecutorService executorService = ExecutorFactory.getInstance();
         String temp = sequence.nextId().toString();
-        int cycleCount = getCycleCount(list.size());
-        String sysPath = getSystemPath(temp);
+        String name = getName(type);
+        String file = name + "_" + temp;
+        int cycleCount = getCycleCount(list.size(),sheetCount);
+        String sysPath = getSystemPath(file);
+        String prefix = sysPath + file + "_";
         for (int i = 0; i < cycleCount; i++) {
-            final String path = sysPath + temp + "_" + i + ".xls";
-            futures.add(path);
-            final List nextList = getNextList(list, i);
+            final String path = prefix + i + ".xls";
+            final List nextList = getNextList(list,i,sheetCount);
             executorService.execute(createRunnable(nextList, type,path));
+            futures.add(path);
         }
         executorService.shutdown();
         return sysPath;
     }
 
 
+    private static String getName(Class type){
+        String excelTitleName = ExcelConfigureUtil.getExcelTitleName(type);
+        if (StringUtils.isBlank(excelTitleName)){
+            return type.getSimpleName();
+        }
+        return excelTitleName;
+    }
+
     private static String getSystemPath(String temp) {
 
-        String path = "d:/excel/" + temp;
+        String path = "d:/excel/";
 //        String path = System.getProperty("java.io.tmpdir");
-        path = path.lastIndexOf('/') > 0 ? (path + temp) : (path + File.separator + temp);
+        path = (path.lastIndexOf('/') == path.length() - 1) ? (path + temp) : (path + File.separator + temp);
         File file = new File(path);
         if (!file.exists()){
             file.mkdirs();
@@ -318,22 +330,24 @@ public abstract class ExcelUtils {
         };
     }
 
-    private static List getNextList(List list, int index) {
+    private static List getNextList(List list, int index,Integer sheetCnt) {
 
+        int sheetCount = sheetCnt == null ? SHEET_COUNT : sheetCnt;
         int length = list.size();                           // collection size
-        int startIndex = index * SHEET_COUNT;
-        int endIndex = startIndex + SHEET_COUNT;
+        int startIndex = index * sheetCount;
+        int endIndex = startIndex + sheetCount;
         endIndex = length > endIndex ? endIndex : length;
         return list.subList(startIndex, endIndex);
     }
 
-    private static int getCycleCount(int size) {
+    private static int getCycleCount(int size,Integer sheetCnt) {
 
+        int sheetCount = sheetCnt == null ? SHEET_COUNT : sheetCnt;
         int cycleCount = 0;
-        if ((size % SHEET_COUNT) != 0) {
-            return (size / SHEET_COUNT) + 1;
+        if ((size % sheetCount) != 0) {
+            return (size / sheetCount) + 1;
         }
-        return (size / SHEET_COUNT);
+        return (size / sheetCount);
     }
 
     private static Workbook getWorkBook(List<Future<Workbook>> futures, Class type) {
