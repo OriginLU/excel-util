@@ -38,42 +38,34 @@ public abstract class ExcelUtils {
 
     private static int CELL_WIDTH = 20;
 
-    private static int SHEET_COUNT = 10000;
 
-
-    private static Object getResult(ExcelColumnConf config, Object obj) throws InvocationTargetException {
-
-        Field field = config.getAnnotationField();
-        if (field != null) {
-            return ReflectUtils.getFieldValue(obj, field);
-        }
-        Method method = config.getAnnotationMethod();
-        if (method != null) {
-            return ReflectUtils.invokeMethod(obj, method);
-        }
-        return null;
-    }
 
     public static Workbook createExcel(List list, Class type) {
 
-        if (type.getAnnotation(Excel.class) == null) {
-
-        }
+        paramsCheck(list,type);
         ExcelColumnConf[] conf = ExcelConfigureUtil.getExcelColumnConfiguration(type);
         String titleName = ExcelConfigureUtil.getExcelTitleName(type);
         String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
         Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
-        Sheet sheet = workbook.createSheet(titleName);
-        sheet.setDefaultColumnWidth(CELL_WIDTH);
-
-        int rowNum = 0;
-        int columnLength = conf.length;
-
-        rowNum = createTitleRow(workbook, sheet, titleName, columnLength);
-        rowNum = createColumnNameRow(workbook, sheet, conf, rowNum);
-        createContentRow(workbook, sheet, list, conf, rowNum);
-
+        Sheet sheet = createSheet(workbook,titleName);
+        int rowIndex = createTitleRow(workbook, sheet, titleName, conf.length);
+        rowIndex = createColumnNameRow(workbook, sheet, conf, rowIndex);
+        createContentRow(workbook, sheet, list, conf, rowIndex);
         return workbook;
+    }
+
+    private static void paramsCheck(List list, Class type) {
+
+        if (type.getAnnotation(Excel.class) == null) {
+
+        }
+    }
+
+    private static Sheet createSheet(Workbook workbook, String titleName) {
+
+         Sheet sheet = workbook.createSheet(titleName);
+        sheet.setDefaultColumnWidth(CELL_WIDTH);
+        return sheet;
     }
 
     /**
@@ -89,14 +81,15 @@ public abstract class ExcelUtils {
         try {
             int length = list.size();
             int columnLength = configs.length;
-            CellStyle cellStyle = getContentCellStyle(workbook);
-            for (int i = rowNum, j = 0; j < length; i++, j++) {
-                Row row = sheet.createRow(i);
-                Object obj = list.get(j);
-                for (int k = 0; k < columnLength; k++) {
-                    ExcelColumnConf config = configs[k];
+            CellStyle cellStyle = getCellStyle(workbook);
+
+            for (int rowIndex = rowNum, dataIndex = 0; dataIndex < length; rowIndex++, dataIndex++) {
+                Row row = sheet.createRow(rowIndex);
+                Object obj = list.get(dataIndex);
+                for (int cellIndex = 0; cellIndex < columnLength; cellIndex++) { //create cell for row
+                    ExcelColumnConf config = configs[cellIndex];
                     Object result = getResult(config, obj);
-                    Cell cell = row.createCell(k);
+                    Cell cell = row.createCell(cellIndex);
                     cell.setCellStyle(cellStyle);
                     cell.setCellValue(convertToString(result, config.getAnnotations()));
                 }
@@ -105,6 +98,19 @@ public abstract class ExcelUtils {
             log.error("invoke method throw exception : ", e);
             throw new ExcelCreateException("invoke method error ", e);
         }
+    }
+
+    private static Object getResult(ExcelColumnConf config, Object obj) throws InvocationTargetException {
+
+        Field field = config.getAnnotationField();
+        if (field != null) {
+            return ReflectUtils.getFieldValue(obj, field);
+        }
+        Method method = config.getAnnotationMethod();
+        if (method != null) {
+            return ReflectUtils.invokeMethod(obj, method);
+        }
+        return null;
     }
 
     /**
@@ -118,11 +124,14 @@ public abstract class ExcelUtils {
     private static int createColumnNameRow(Workbook workbook, Sheet sheet, ExcelColumnConf[] conf, int rowNum) {
 
         Row row = sheet.createRow(rowNum);
+        CellStyle contentCellStyle = getColumnNameCellStyle(workbook);
         for (int i = 0; i < conf.length; i++) {
             Map<Class, Annotation> annotations = conf[i].getAnnotations();
             ExcelColumn excelColumn = (ExcelColumn) annotations.get(ExcelColumn.class);
             String columnName = excelColumn.columnTitle();
-            row.createCell(i).setCellValue(columnName);
+            Cell cell = row.createCell(i);
+            cell.setCellStyle(contentCellStyle);
+            cell.setCellValue(columnName);
 
         }
         return (rowNum + 1);
@@ -183,7 +192,7 @@ public abstract class ExcelUtils {
      * @param wb
      * @return
      */
-    private static CellStyle getContentCellStyle(Workbook wb) {
+    private static CellStyle getColumnNameCellStyle(Workbook wb) {
 
         Font cellFont = wb.createFont();
         cellFont.setItalic(false);                                      // 设置字体为斜体字
