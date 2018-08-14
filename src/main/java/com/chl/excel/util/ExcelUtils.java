@@ -117,24 +117,34 @@ public abstract class ExcelUtils {
      * create column name for excel
      * @param workbook
      * @param sheet
-     * @param conf
+     * @param configs
      * @param rowNum
      * @return
      */
-    private static int createColumnNameRow(Workbook workbook, Sheet sheet, ExcelColumnConf[] conf, int rowNum) {
+    private static int createColumnNameRow(Workbook workbook, Sheet sheet, ExcelColumnConf[] configs, int rowNum) {
 
         Row row = sheet.createRow(rowNum);
         CellStyle contentCellStyle = getColumnNameCellStyle(workbook);
-        for (int i = 0; i < conf.length; i++) {
-            Map<Class, Annotation> annotations = conf[i].getAnnotations();
-            ExcelColumn excelColumn = (ExcelColumn) annotations.get(ExcelColumn.class);
-            String columnName = excelColumn.columnTitle();
+        for (int i = 0; i < configs.length; i++) {
+            String columnName = getColumnName(configs[i]);
             Cell cell = row.createCell(i);
             cell.setCellStyle(contentCellStyle);
             cell.setCellValue(columnName);
 
         }
         return (rowNum + 1);
+    }
+
+    private static String getColumnName(ExcelColumnConf conf){
+
+        Map<Class, Annotation> annotations = conf.getAnnotations();
+        ExcelColumn excelColumn = (ExcelColumn) annotations.get(ExcelColumn.class);
+        String columnName = excelColumn.columnTitle();
+        if (StringUtils.isBlank(columnName)){
+            Field annotationField = conf.getAnnotationField();
+            return annotationField.getName();
+        }
+        return columnName;
     }
 
     /**
