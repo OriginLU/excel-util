@@ -40,4 +40,19 @@ public class TestDemo {
         System.out.println(excel);
         System.out.println(System.currentTimeMillis() - currentTimeMillis);
     }
+
+     public static void main(String[] args){
+
+
+        ArrayList arrayList = new ArrayList();
+        for (int i = 0; i < 100000; i++) {
+
+            Demo demo = new Demo();
+            demo.setName("Test Demo" + i);
+            demo.setId(i + "");
+            arrayList.add(demo);
+        }
+        String excelAdvance = ExcelUtils.createExcelFiles(arrayList, Demo.class,7000);
+        System.out.println(excelAdvance);
+    }
 }
