@@ -20,7 +20,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -34,12 +33,12 @@ import java.util.concurrent.*;
  * @author LCH
  * @since 2018-06-13
  */
-public abstract class ExcelUtils {
+public abstract class POIExcelUtils {
 
 
-    private final static Logger log = LoggerFactory.getLogger(ExcelUtils.class);
+    private final static Logger log = LoggerFactory.getLogger(POIExcelUtils.class);
 
-    private static int CELL_WIDTH = 20;
+    private static int CELL_WIDTH = 200;
 
     private static int SHEET_COUNT = 1000;
 
@@ -59,6 +58,8 @@ public abstract class ExcelUtils {
         createContentRow(workbook, sheet, list, conf, rowIndex);
         return workbook;
     }
+
+
 
     private static void paramsCheck(List list, Class type) {
 
@@ -147,9 +148,10 @@ public abstract class ExcelUtils {
             Cell cell = row.createCell(i);
             cell.setCellStyle(contentCellStyle);
             cell.setCellValue(columnName);
-
         }
-        return (rowNum + 1);
+        rowNum += 1;
+        sheet.createFreezePane(0,rowNum,0,rowNum);
+        return rowNum;
     }
 
     private static String getColumnName(ExcelColumnConf conf) {
@@ -179,9 +181,10 @@ public abstract class ExcelUtils {
         if (StringUtils.isNotBlank(titleName)) {
             Row titleRow = sheet.createRow(0);
             Cell cell = titleRow.createCell(0);
-            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, columnLength - 1));
-            cell.setCellStyle(getTitleCellStyle(book));
             cell.setCellValue(titleName);
+            cell.setCellStyle(getTitleCellStyle(book));
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, columnLength - 1));
+            sheet.createFreezePane(0,1,0,1);
             return 1;
         }
         return 0;
@@ -263,31 +266,27 @@ public abstract class ExcelUtils {
      */
     public static String createExcelFiles(final List list, final Class type, Integer sheetCount) {
 
-        List futures = new ArrayList();
         ExecutorService executorService = ExecutorFactory.getInstance();
-        String temp = sequence.nextId().toString();
         String name = getName(type);
-        String file = name + "_" + temp;
         int cycleCount = getCycleCount(list.size(),sheetCount);
-        String sysPath = getSystemPath(file);
-        String prefix = sysPath + file + "_";
+        String sysPath = getSystemPath(name);
+        String prefix = sysPath + name + "_";
         for (int i = 0; i < cycleCount; i++) {
             final String path = prefix + i + ".xls";
             final List nextList = getNextList(list,i,sheetCount);
             executorService.execute(createRunnable(nextList, type,path));
-            futures.add(path);
         }
         executorService.shutdown();
         return sysPath;
     }
 
-
     private static String getName(Class type){
-        String excelTitleName = ExcelConfigureUtil.getExcelTitleName(type);
-        if (StringUtils.isBlank(excelTitleName)){
-            return type.getSimpleName();
+        String temp = sequence.nextId().toString();
+        String name = ExcelConfigureUtil.getExcelTitleName(type);
+        if (StringUtils.isBlank(name)){
+             name = type.getSimpleName();
         }
-        return excelTitleName;
+        return name + "_" + temp;
     }
 
     private static String getSystemPath(String temp) {
