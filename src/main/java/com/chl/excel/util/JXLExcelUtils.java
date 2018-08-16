@@ -66,7 +66,6 @@ public class JXLExcelUtils extends BaseUtils {
             if (StringUtils.isNotBlank(titleName)) {
                 SheetSettings settings = sheet.getSettings();
                 settings.setVerticalFreeze(0);                                      //设置冻结行
-                sheet.setColumnView(0, getCellView());                          //设置自动宽度样式
                 Label label = new Label(0, 0, titleName, getTitleCellFormat());
                 sheet.mergeCells(0, 0, columnLength - 1, 0);
                 sheet.addCell(label);
@@ -87,14 +86,12 @@ public class JXLExcelUtils extends BaseUtils {
      */
     private static int createColumnTitleRow(WritableSheet sheet, ExcelColumnConf[] configs, int rowNum) {
 
-        CellView cellView = getCellView();
         CellFormat cellFormat = getColumnTitleCellFormat();
         try {
             for (int col = 0; col < configs.length; col++) {
                 String columnName = getColumnName(configs[col]);
                 Label label = new Label(col, rowNum, columnName, cellFormat);
                 sheet.addCell(label);
-                sheet.setColumnView(col,cellView);
             }
         } catch (Exception e) {
             throw new ExcelCreateException("create excel the title of column has error ", e);
