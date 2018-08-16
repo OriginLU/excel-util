@@ -7,7 +7,7 @@ import com.chl.excel.annotation.ExcelColumn;
  * @author LCH
  * @since 2018-06-27
  */
-@Excel
+@Excel("测试")
 public class Demo {
 
     @ExcelColumn(columnTitle = "姓名")
