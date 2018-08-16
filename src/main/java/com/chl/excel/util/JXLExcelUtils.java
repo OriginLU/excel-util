@@ -87,8 +87,8 @@ public class JXLExcelUtils extends BaseUtils {
      */
     private static int createColumnTitleRow(WritableSheet sheet, ExcelColumnConf[] configs, int rowNum) {
 
-        CellFormat cellFormat = getColumnTitleCellFormat();
         CellView cellView = getCellView();
+        CellFormat cellFormat = getColumnTitleCellFormat();
         try {
             for (int col = 0; col < configs.length; col++) {
                 String columnName = getColumnName(configs[col]);
@@ -118,8 +118,8 @@ public class JXLExcelUtils extends BaseUtils {
 
         int length = list.size();
         int columnLength = configs.length;
-        CellFormat cellFormat = getColumnCellFormat();
         CellView cellView = getCellView();
+        CellFormat cellFormat = getColumnCellFormat();
         try {
             for (int row = rowNum, data = 0; data < length; row++, data++) {
                 Object obj = list.get(data);
@@ -220,7 +220,6 @@ public class JXLExcelUtils extends BaseUtils {
     private static CellFormat getCellFormat(WritableFont font) throws WriteException {
 
         WritableCellFormat cellFormat = new WritableCellFormat(font);
-        cellFormat.setWrap(true);                                     //设置自动换行
         cellFormat.setAlignment(Alignment.CENTRE);                    //设置文字居中对齐方式
         cellFormat.setVerticalAlignment(VerticalAlignment.CENTRE);    //设置垂直居中
         return cellFormat;
