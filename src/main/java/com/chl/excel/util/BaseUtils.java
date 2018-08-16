@@ -1,6 +1,7 @@
 package com.chl.excel.util;
 
 import com.chl.excel.annotation.ExcelColumn;
+import com.chl.excel.configure.ExcelConfigureUtil;
 import com.chl.excel.entity.ExcelColumnConf;
 import com.chl.excel.exception.ExcelCreateException;
 import org.apache.commons.lang3.StringUtils;
@@ -9,6 +10,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,6 +21,12 @@ import java.util.concurrent.ThreadFactory;
  * @since 2018-08-16
  */
  abstract class BaseUtils {
+
+
+    protected static int SHEET_COUNT = 1000;
+
+    private static Sequence sequence = new Sequence(2l, 2l);
+
 
     protected static Object getResult(ExcelColumnConf config, Object obj) {
 
@@ -54,6 +62,36 @@ import java.util.concurrent.ThreadFactory;
             return field.getName();
         }
         return columnName;
+    }
+
+    protected static List getNextList(List list, int index, Integer sheetCnt) {
+
+        int sheetCount = sheetCnt == null ? SHEET_COUNT : sheetCnt;
+        int length = list.size();                           // collection size
+        int startIndex = index * sheetCount;
+        int endIndex = startIndex + sheetCount;
+        endIndex = length > endIndex ? endIndex : length;
+        return list.subList(startIndex, endIndex);
+    }
+
+    protected static int getCycleCount(int size,Integer sheetCnt) {
+
+        int sheetCount = sheetCnt == null ? SHEET_COUNT : sheetCnt;
+        int cycleCount = 0;
+        if ((size % sheetCount) != 0) {
+            return (size / sheetCount) + 1;
+        }
+        return (size / sheetCount);
+    }
+
+    protected static String getName(Class type){
+
+        String temp = sequence.nextId().toString();
+        String name = ExcelConfigureUtil.getExcelTitleName(type);
+        if (StringUtils.isBlank(name)){
+            name = type.getSimpleName();
+        }
+        return name + "_" + temp;
     }
 
 

@@ -11,16 +11,12 @@ import jxl.format.CellFormat;
 import jxl.format.UnderlineStyle;
 import jxl.format.VerticalAlignment;
 import jxl.write.*;
-import jxl.write.biff.RowsExceededException;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 
 /**
  * @author lch
@@ -30,82 +26,7 @@ public class JXLExcelUtils extends BaseUtils {
 
     private final static Logger log = LoggerFactory.getLogger(JXLExcelUtils.class);
 
-    private static int CELL_WIDTH = 200;
-
-    private static int SHEET_COUNT = 1000;
-
-    private static Sequence sequence = new Sequence(2l, 2l);
-
-    public static void main(String[] args)
-            throws IOException, RowsExceededException, WriteException {
-        //1:创建excel文件
-        File file = new File("d:/test.xls");
-        file.createNewFile();
-        //2:创建工作簿
-        final WritableWorkbook workbook = Workbook.createWorkbook(file);
-        //3:创建sheet,设置第二三四..个sheet，依次类推即可
-        ExecutorService executorService = ExecutorFactory.getInstance();
-
-        final CountDownLatch latch = new CountDownLatch(10);
-        for (int i = 0; i < 10; i++) {
-
-            final WritableSheet sheet = workbook.createSheet("用户管理", i);
-            Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-
-                    try {
-
-                        //4：设置titles
-                        String[] titles = {"编号", "账号", "密码"};
-                        //5:单元格
-                        Label label = null;
-                        //6:给第一行设置列名
-                        for (int i = 0; i < titles.length; i++) {
-                            //x,y,第一行的列名
-                            label = new Label(i, 0, titles[i], getColumnCellFormat());
-                            //7：添加单元格
-                            sheet.addCell(label);
-                        }
-                        //8：模拟数据库导入数据
-                        for (int i = 1; i < 10; i++) {
-                            //添加编号，第二行第一列
-                            label = new Label(0, i, i + "");
-                            sheet.addCell(label);
-
-                            //添加账号
-                            label = new Label(1, i, "10010" + i);
-                            sheet.addCell(label);
-
-                            //添加密码
-                            label = new Label(2, i, "123456");
-                            sheet.addCell(label);
-                        }
-
-                        latch.countDown();
-                    } catch (Exception e) {
-                        throw new ExcelCreateException("create excel error", e);
-                    }
-
-                }
-            };
-            executorService.execute(runnable);
-        }
-
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        //写入数据，一定记得写入数据，不然你都开始怀疑世界了，excel里面啥都没有
-        workbook.write();
-        //最后一步，关闭工作簿
-        workbook.close();
-        executorService.shutdown();
-    }
-
-
-    public static OutputStream createExcel(List list, Class type) {
+    public static byte[] createExcel(List list, Class type) {
 
         try {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -116,7 +37,9 @@ public class JXLExcelUtils extends BaseUtils {
             int rowIndex = createTitleRow(sheet, titleName, conf.length);
             rowIndex = createColumnTitleRow(sheet, conf, rowIndex);
             createContentRow(sheet, list, conf, rowIndex);
-            return os;
+            workbook.write();
+            workbook.close();
+            return os.toByteArray();
         }catch (Exception e){
             throw new ExcelCreateException("create title row has error ", e);
         }
@@ -142,11 +65,11 @@ public class JXLExcelUtils extends BaseUtils {
         try {
             if (StringUtils.isNotBlank(titleName)) {
                 SheetSettings settings = sheet.getSettings();
-                settings.setVerticalFreeze(0);                              //设置冻结行
-                sheet.setColumnView(0, getCellView());                   //设置自动宽度样式
+                settings.setVerticalFreeze(0);                                      //设置冻结行
+                sheet.setColumnView(0, getCellView());                          //设置自动宽度样式
                 Label label = new Label(0, 0, titleName, getTitleCellFormat());
+                sheet.mergeCells(0, 0, columnLength - 1, 0);
                 sheet.addCell(label);
-                sheet.mergeCells(0, 0, 0, columnLength - 1);
                 return 1;
             }
             return 0;
@@ -165,18 +88,21 @@ public class JXLExcelUtils extends BaseUtils {
     private static int createColumnTitleRow(WritableSheet sheet, ExcelColumnConf[] configs, int rowNum) {
 
         CellFormat cellFormat = getColumnTitleCellFormat();
+        CellView cellView = getCellView();
         try {
-            for (int i = 0; i < configs.length; i++) {
-                String columnName = getColumnName(configs[i]);
-                Label label = new Label(i, rowNum, columnName, cellFormat);
+            for (int col = 0; col < configs.length; col++) {
+                String columnName = getColumnName(configs[col]);
+                Label label = new Label(col, rowNum, columnName, cellFormat);
                 sheet.addCell(label);
+                sheet.setColumnView(col,cellView);
             }
         } catch (Exception e) {
             throw new ExcelCreateException("create excel the title of column has error ", e);
         }
+        rowNum  = rowNum + 1;
         SheetSettings settings = sheet.getSettings();
         settings.setVerticalFreeze(rowNum);
-        return (rowNum + 1);
+        return rowNum;
     }
 
     /**
@@ -195,15 +121,15 @@ public class JXLExcelUtils extends BaseUtils {
         CellFormat cellFormat = getColumnCellFormat();
         CellView cellView = getCellView();
         try {
-            for (int rowIndex = rowNum, dataIndex = 0; dataIndex < length; rowIndex++, dataIndex++) {
-                Object obj = list.get(dataIndex);
-                for (int cellIndex = 0; cellIndex < columnLength; cellIndex++) { //create cell for row
-                    ExcelColumnConf config = configs[cellIndex];
+            for (int row = rowNum, data = 0; data < length; row++, data++) {
+                Object obj = list.get(data);
+                for (int col = 0; col < columnLength; col++) { //create cell for row
+                    ExcelColumnConf config = configs[col];
                     Object result = getResult(config, obj);
                     String s = convertToString(result, config.getAnnotations());
-                    Label label = new Label(rowIndex, cellIndex, s, cellFormat);
+                    Label label = new Label(col,row,s, cellFormat);
                     sheet.addCell(label);
-                    sheet.setColumnView(cellIndex, cellView);
+                    sheet.setColumnView(col, cellView);
                 }
             }
         } catch (Exception e) {

@@ -1,7 +1,6 @@
 package com.chl.excel.util;
 
 import com.chl.excel.annotation.Excel;
-import com.chl.excel.annotation.ExcelColumn;
 import com.chl.excel.configure.ExcelConfigureUtil;
 import com.chl.excel.entity.ExcelColumnConf;
 import com.chl.excel.exception.ExcelCreateException;
@@ -16,14 +15,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * because of poi as the tool of excel for operation is not be safe in the multi thread,
@@ -39,8 +35,6 @@ public abstract class POIExcelUtils extends BaseUtils{
     private final static Logger log = LoggerFactory.getLogger(POIExcelUtils.class);
 
     private static int CELL_WIDTH = 200;
-
-    private static int SHEET_COUNT = 1000;
 
     private static Sequence sequence = new Sequence(1l, 1l);
 
@@ -92,13 +86,13 @@ public abstract class POIExcelUtils extends BaseUtils{
         int columnLength = configs.length;
         CellStyle cellStyle = getCellStyle(workbook);
 
-        for (int rowIndex = rowNum, dataIndex = 0; dataIndex < length; rowIndex++, dataIndex++) {
+        for (int rowIndex = rowNum, data = 0; data < length; rowIndex ++, data ++) {
             Row row = sheet.createRow(rowIndex);
-            Object obj = list.get(dataIndex);
-            for (int cellIndex = 0; cellIndex < columnLength; cellIndex++) { //create cell for row
-                ExcelColumnConf config = configs[cellIndex];
+            Object obj = list.get(data);
+            for (int col = 0; col < columnLength; col++) { //create cell for row
+                ExcelColumnConf config = configs[col];
                 Object result = getResult(config, obj);
-                Cell cell = row.createCell(cellIndex);
+                Cell cell = row.createCell(col);
                 cell.setCellStyle(cellStyle);
                 cell.setCellValue(convertToString(result, config.getAnnotations()));
             }
@@ -119,9 +113,9 @@ public abstract class POIExcelUtils extends BaseUtils{
 
         Row row = sheet.createRow(rowNum);
         CellStyle contentCellStyle = getColumnNameCellStyle(workbook);
-        for (int i = 0; i < configs.length; i++) {
-            String columnName = getColumnName(configs[i]);
-            Cell cell = row.createCell(i);
+        for (int col = 0; col < configs.length; col++) {
+            String columnName = getColumnName(configs[col]);
+            Cell cell = row.createCell(col);
             cell.setCellStyle(contentCellStyle);
             cell.setCellValue(columnName);
         }
@@ -244,14 +238,7 @@ public abstract class POIExcelUtils extends BaseUtils{
         return sysPath;
     }
 
-    private static String getName(Class type){
-        String temp = sequence.nextId().toString();
-        String name = ExcelConfigureUtil.getExcelTitleName(type);
-        if (StringUtils.isBlank(name)){
-             name = type.getSimpleName();
-        }
-        return name + "_" + temp;
-    }
+
 
     private static String getSystemPath(String temp) {
 
@@ -293,25 +280,7 @@ public abstract class POIExcelUtils extends BaseUtils{
         };
     }
 
-    private static List getNextList(List list, int index,Integer sheetCnt) {
 
-        int sheetCount = sheetCnt == null ? SHEET_COUNT : sheetCnt;
-        int length = list.size();                           // collection size
-        int startIndex = index * sheetCount;
-        int endIndex = startIndex + sheetCount;
-        endIndex = length > endIndex ? endIndex : length;
-        return list.subList(startIndex, endIndex);
-    }
-
-    private static int getCycleCount(int size,Integer sheetCnt) {
-
-        int sheetCount = sheetCnt == null ? SHEET_COUNT : sheetCnt;
-        int cycleCount = 0;
-        if ((size % sheetCount) != 0) {
-            return (size / sheetCount) + 1;
-        }
-        return (size / sheetCount);
-    }
 
     private static Workbook getWorkBook(List<Future<Workbook>> futures, Class type) {
 
