@@ -33,7 +33,7 @@ import java.util.concurrent.*;
  * @author LCH
  * @since 2018-06-13
  */
-public abstract class POIExcelUtils {
+public abstract class POIExcelUtils extends BaseUtils{
 
 
     private final static Logger log = LoggerFactory.getLogger(POIExcelUtils.class);
@@ -106,30 +106,6 @@ public abstract class POIExcelUtils {
 
     }
 
-    private static String convertToString(Object result, Map<Class, Annotation> ans) {
-        if (result == null) {
-            return "";
-        }
-        return result.toString();
-    }
-
-    private static Object getResult(ExcelColumnConf config, Object obj) {
-
-        try {
-            Field field = config.getAnnotationField();
-            if (field != null) {
-                return ReflectUtils.getFieldValue(obj, field);
-            }
-            Method method = config.getAnnotationMethod();
-            if (method != null) {
-                return ReflectUtils.invokeMethod(obj, method);
-            }
-        } catch (InvocationTargetException e) {
-            throw new ExcelCreateException("create excel error ", e);
-        }
-        return null;
-    }
-
     /**
      * create column name for excel
      *
@@ -152,18 +128,6 @@ public abstract class POIExcelUtils {
         rowNum += 1;
         sheet.createFreezePane(0,rowNum,0,rowNum);
         return rowNum;
-    }
-
-    private static String getColumnName(ExcelColumnConf conf) {
-
-        Map<Class, Annotation> annotations = conf.getAnnotations();
-        ExcelColumn excelColumn = (ExcelColumn) annotations.get(ExcelColumn.class);
-        String columnName = excelColumn.columnTitle();
-        if (StringUtils.isBlank(columnName)) {
-            Field field = conf.getAnnotationField();
-            return field.getName();
-        }
-        return columnName;
     }
 
     /**
@@ -458,53 +422,5 @@ public abstract class POIExcelUtils {
         toStyle.cloneStyleFrom(fromStyle);//此一行代码搞定
     }
 
-    /**
-     * create executor service by ExecutorFactory
-     */
-    private static class ExecutorFactory {
 
-        private static ExecutorService executorService;
-
-        private static int coreCount = Runtime.getRuntime().availableProcessors();
-
-        public static synchronized ExecutorService getInstance() {
-
-            if (executorService != null && !executorService.isShutdown()) {
-                return executorService;
-            }
-            executorService = Executors.newFixedThreadPool(coreCount, new ExecutorThreadFactory());
-            return executorService;
-        }
-
-        public static synchronized void close() {
-
-            if (executorService != null && executorService.isShutdown()) {
-                executorService.shutdown();
-            }
-        }
-
-        /**
-         * when you use the {@link ExecutorService#execute(Runnable)}
-         * throw exception will be catch by the handler for exception
-         */
-        private static class ExecutorExceptionHandler implements Thread.UncaughtExceptionHandler {
-
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                e.printStackTrace();
-            }
-        }
-
-        /**
-         * create thread factory for exception
-         */
-        private static class ExecutorThreadFactory implements ThreadFactory {
-
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setUncaughtExceptionHandler(new ExecutorExceptionHandler());
-                return t;
-            }
-        }
-    }
 }
