@@ -13,11 +13,11 @@ import jxl.format.VerticalAlignment;
 import jxl.write.*;
 import jxl.write.biff.RowsExceededException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -105,22 +105,28 @@ public class JXLExcelUtils extends BaseUtils {
     }
 
 
-    public static File createExcel(List list, Class type) {
+    public static OutputStream createExcel(List list, Class type) {
 
         try {
-            File tempFile = File.createTempFile("test", ".xls");
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
             ExcelColumnConf[] conf = ExcelConfigureUtil.getExcelColumnConfiguration(type);
             String titleName = ExcelConfigureUtil.getExcelTitleName(type);
-            WritableWorkbook workbook = Workbook.createWorkbook(tempFile);
-            WritableSheet sheet = workbook.createSheet("用户管理", 0);
+            WritableWorkbook workbook = Workbook.createWorkbook(os);
+            WritableSheet sheet = createSheet(workbook,titleName,type,0);
             int rowIndex = createTitleRow(sheet, titleName, conf.length);
             rowIndex = createColumnTitleRow(sheet, conf, rowIndex);
             createContentRow(sheet, list, conf, rowIndex);
-
+            return os;
         }catch (Exception e){
             throw new ExcelCreateException("create title row has error ", e);
         }
-        return null;
+    }
+
+    private static WritableSheet createSheet(WritableWorkbook workbook,String titleName,Class type,int index){
+
+        String sheetName = StringUtils.isBlank(titleName) ? type.getSimpleName() : titleName;
+        WritableSheet sheet = workbook.createSheet(titleName, index);
+        return sheet;
     }
 
     /**
