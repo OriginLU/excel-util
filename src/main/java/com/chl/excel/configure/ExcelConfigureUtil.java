@@ -60,18 +60,19 @@ public abstract class ExcelConfigureUtil {
 
         for (int col = 0; col < length; col++) {
 
-            boolean hasOrder = false;
             Member member = members.get(col);
             ExcelCol columnConf = createExcelColumn(member);
             ExcelColumn excelColumn = ReflectUtils.getMemberAnnotation(member, ExcelColumn.class);
             Integer order = excelColumn.order();
 
-            if (order > -1 && !(hasOrder = orders.add(order))) {
+            if (order > -1) {
 
-                String memberName = member.getDeclaringClass().getName();
-                throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order +
-                        " in the member [" + memberName + "." + member.getName() + "]," + "which same as the" +
-                        " member [" + memberName + "." + conf[order].getMember().getName() + "]");
+                if (!orders.add(order)){
+                    String memberName = member.getDeclaringClass().getName();
+                    throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order +
+                            " in the member [" + memberName + "." + member.getName() + "]," + "which same as the" +
+                            " member [" + memberName + "." + conf[order].getMember().getName() + "]");
+                }
 
             } else {
                 order = (index.size() > 0) ? index.pop() : getFreeIndex(col, conf);
@@ -86,8 +87,8 @@ public abstract class ExcelConfigureUtil {
                 conf[order] = columnConf;
             }
 
-            if (hasOrder && col != order) {
-                index.add(getFreeIndex(col, conf));
+            if (!index.contains(order = getFreeIndex(col, conf)) && col != length - 1){
+                index.add(order);
             }
         }
         return conf;
@@ -120,15 +121,17 @@ public abstract class ExcelConfigureUtil {
         try {
             Set<Integer> orderSets = new HashSet();
             LinkedList<Integer> index = new LinkedList();
-            List<Integer> list = Arrays.asList(0, 6, -1, -1, -1, 5, -1, 8, -1);
+            List<Integer> list = Arrays.asList(0, -1, -1, 8, -1, 5, -1, 6, -1);
             Integer[] conf = new Integer[list.size()];
             long start = System.currentTimeMillis();
+            boolean hasOrder = false;
             for (int i = 0, length = list.size(); i < length; i++) {
 
-                boolean hasOrder = false;
                 Integer order = list.get(i);
-                if (order > -1 && !(hasOrder = orderSets.add(order))) {
-                    throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order);
+                if (order > -1) {
+                    if (!orderSets.add(order)){
+                        throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order);
+                    }
                 } else {
                     order = (index.size() > 0) ? index.pop() : getFreeIndex(i, conf);
                 }
@@ -141,8 +144,8 @@ public abstract class ExcelConfigureUtil {
                     conf[order] = order;
                 }
 
-                if (hasOrder && i != order){
-                    index.add(getFreeIndex(i, conf));
+                if (!index.contains(order = getFreeIndex(i, conf)) && i != length - 1){
+                    index.add(order);
                 }
             }
             System.out.println("time : " + (System.currentTimeMillis() - start));
