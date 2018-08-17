@@ -2,14 +2,12 @@ package com.chl.excel.util;
 
 import com.chl.excel.annotation.ExcelColumn;
 import com.chl.excel.configure.ExcelConfigureUtil;
-import com.chl.excel.entity.ExcelColumnConf;
+import com.chl.excel.entity.ExcelCol;
 import com.chl.excel.exception.ExcelCreateException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -27,22 +25,13 @@ import java.util.concurrent.ThreadFactory;
 
     private static Sequence sequence = new Sequence(2l, 2l);
 
-
-    protected static Object getResult(ExcelColumnConf config, Object obj) {
+    protected static Object getValue(Object obj,ExcelCol config) {
 
         try {
-            Field field = config.getAnnotationField();
-            if (field != null) {
-                return ReflectUtils.getFieldValue(obj, field);
-            }
-            Method method = config.getAnnotationMethod();
-            if (method != null) {
-                return ReflectUtils.invokeMethod(obj, method);
-            }
+            return ReflectUtils.getMemberValue(obj, config.getMember());
         } catch (InvocationTargetException e) {
             throw new ExcelCreateException("create excel error ", e);
         }
-        return null;
     }
 
     protected static String convertToString(Object result, Map<Class, Annotation> ans) {
@@ -52,14 +41,13 @@ import java.util.concurrent.ThreadFactory;
         return result.toString();
     }
 
-    protected static String getColumnName(ExcelColumnConf conf) {
 
-        Map<Class, Annotation> annotations = conf.getAnnotations();
-        ExcelColumn excelColumn = (ExcelColumn) annotations.get(ExcelColumn.class);
+    protected static String getColumnName(ExcelCol conf) {
+
+        ExcelColumn excelColumn = (ExcelColumn) conf.getAnnotations().get(ExcelColumn.class);
         String columnName = excelColumn.columnTitle();
         if (StringUtils.isBlank(columnName)) {
-            Field field = conf.getAnnotationField();
-            return field.getName();
+            return conf.getMember().getName();
         }
         return columnName;
     }

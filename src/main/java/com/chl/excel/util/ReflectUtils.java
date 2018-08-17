@@ -1,8 +1,11 @@
 package com.chl.excel.util;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -195,10 +198,13 @@ public abstract class ReflectUtils {
      */
     public static List<Field> getFields(Class clazz) {
 
-        List fields = new LinkedList();
+        List fields;
         Class superclass = clazz.getSuperclass();
         if (Object.class != superclass) {
             fields = getFields(superclass);
+        }
+        else {
+            fields = new ArrayList();
         }
         fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
         return fields;
@@ -212,10 +218,13 @@ public abstract class ReflectUtils {
      */
     public static List<Method> getMethods(Class clazz) {
 
-        List methods = new LinkedList();
+        List methods;
         Class superclass = clazz.getSuperclass();
         if (Object.class != superclass) {
             methods = getMethods(superclass);
+        }
+        else {
+            methods = new ArrayList();
         }
         methods.addAll(Arrays.asList(clazz.getDeclaredMethods()));
         return methods;
@@ -230,10 +239,12 @@ public abstract class ReflectUtils {
      */
     public static List<Field> getSpecifiedAnnotationFields(Class clazz, Class annotationClass) {
 
-        List list = new LinkedList<>();
+        List list;
         Class superclass = clazz.getSuperclass();
         if (Object.class != superclass) {
             list = getSpecifiedAnnotationFields(superclass, annotationClass);
+        }else {
+            list = new ArrayList();
         }
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
@@ -253,10 +264,12 @@ public abstract class ReflectUtils {
      */
     public static List<Method> getSpecifiedAnnotationMethods(Class clazz, Class annotationClass) {
 
-        List list = new LinkedList();
+        List list;
         Class superclass = clazz.getSuperclass();
         if (Object.class != superclass) {
             list = getSpecifiedAnnotationMethods(superclass, annotationClass);
+        }else {
+            list = new ArrayList();
         }
         Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods) {
@@ -265,6 +278,48 @@ public abstract class ReflectUtils {
             }
         }
         return list;
+    }
+
+
+    public static Annotation[] getMemberAnnotations(Member member){
+
+        if (member instanceof Field){
+            return ((Field) member).getAnnotations();
+        }
+        else if (member instanceof Method){
+            return ((Method) member).getAnnotations();
+        }
+        else {
+            throw new IllegalArgumentException("input type has error, not support [" + member.getName() + "],check please");
+        }
+    }
+
+
+    public static <T extends Annotation> T getMemberAnnotation(Member member,Class type){
+
+        if (member instanceof Field){
+            return (T) ((Field) member).getAnnotation(type);
+        }
+        else if (member instanceof Method){
+            return (T) ((Method) member).getAnnotation(type);
+        }
+        else {
+            throw new IllegalArgumentException("input type has error, not support [" + member.getName() + "],check please");
+        }
+    }
+
+
+    public static Object getMemberValue(Object src, Member member,Object ...args) throws InvocationTargetException {
+
+        if (member instanceof Field){
+            return getFieldValue(src, (Field) member);
+        }
+        else if (member instanceof Method){
+            return invokeMethod(src, (Method) member,args);
+        }
+        else {
+            throw new IllegalArgumentException("input type has error, not support [" + member.getName() + "],check please");
+        }
     }
 
 }

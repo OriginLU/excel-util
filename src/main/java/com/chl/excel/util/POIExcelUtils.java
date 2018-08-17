@@ -2,7 +2,7 @@ package com.chl.excel.util;
 
 import com.chl.excel.annotation.Excel;
 import com.chl.excel.configure.ExcelConfigureUtil;
-import com.chl.excel.entity.ExcelColumnConf;
+import com.chl.excel.entity.ExcelCol;
 import com.chl.excel.exception.ExcelCreateException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
@@ -42,7 +42,7 @@ public abstract class POIExcelUtils extends BaseUtils{
     public static Workbook createExcel(List list, Class type) {
 
         paramsCheck(list, type);
-        ExcelColumnConf[] conf = ExcelConfigureUtil.getExcelColumnConfiguration(type);
+        ExcelCol[] conf = ExcelConfigureUtil.getExcelColConfiguration(type);
         String titleName = ExcelConfigureUtil.getExcelTitleName(type);
         String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
         Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
@@ -57,7 +57,7 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     private static void paramsCheck(List list, Class type) {
 
-        if (type.getAnnotation(Excel.class) == null) {
+        if (type.isAnnotationPresent(Excel.class)) {
 
         }
     }
@@ -79,7 +79,7 @@ public abstract class POIExcelUtils extends BaseUtils{
      * @param configs
      * @param rowNum
      */
-    private static void createContentRow(Workbook workbook, Sheet sheet, List list, ExcelColumnConf[] configs, int rowNum) {
+    private static void createContentRow(Workbook workbook, Sheet sheet, List list, ExcelCol[] configs, int rowNum) {
 
 
         int length = list.size();
@@ -90,8 +90,8 @@ public abstract class POIExcelUtils extends BaseUtils{
             Row row = sheet.createRow(rowIndex);
             Object obj = list.get(data);
             for (int col = 0; col < columnLength; col++) { //create cell for row
-                ExcelColumnConf config = configs[col];
-                Object result = getResult(config, obj);
+                ExcelCol config = configs[col];
+                Object result = getValue(obj,config);
                 Cell cell = row.createCell(col);
                 cell.setCellStyle(cellStyle);
                 cell.setCellValue(convertToString(result, config.getAnnotations()));
@@ -109,7 +109,7 @@ public abstract class POIExcelUtils extends BaseUtils{
      * @param rowNum
      * @return
      */
-    private static int createColumnNameRow(Workbook workbook, Sheet sheet, ExcelColumnConf[] configs, int rowNum) {
+    private static int createColumnNameRow(Workbook workbook, Sheet sheet, ExcelCol[] configs, int rowNum) {
 
         Row row = sheet.createRow(rowNum);
         CellStyle contentCellStyle = getColumnNameCellStyle(workbook);

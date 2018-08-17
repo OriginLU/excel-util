@@ -8,12 +8,12 @@ import com.chl.excel.annotation.ExcelColumn;
  * @since 2018-06-27
  */
 @Excel("测试")
-public class Demo {
+public class Demo extends SuperDemo{
 
-    @ExcelColumn(columnTitle = "姓名")
+    @ExcelColumn(columnTitle = "姓名",order = 1)
     String name;
 
-    @ExcelColumn(columnTitle = "编号")
+    @ExcelColumn(columnTitle = "编号",order = 2)
     String id;
 
     public String getName() {

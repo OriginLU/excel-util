@@ -1,12 +1,17 @@
 package com.chl.aviator.test;
 
+import com.chl.excel.annotation.ExcelColumn;
+import com.chl.excel.configure.ExcelConfigureUtil;
 import com.chl.excel.util.JXLExcelUtils;
 import com.chl.excel.util.POIExcelUtils;
+import com.chl.excel.util.ReflectUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Test;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 
 /**
  * @author lch
@@ -44,7 +49,7 @@ public class TestDemo {
     @Test
     public void jxlExcelUtilTest(){
         ArrayList arrayList = new ArrayList();
-        for (int i = 0; i < 6000; i++) {
+        for (int i = 0; i < 60000; i++) {
 
             Demo demo = new Demo();
             demo.setName("Test jxlExcel" + i);
@@ -63,6 +68,17 @@ public class TestDemo {
         }
     }
 
+
+    @Test
+    public void getFieldTest(){
+
+        System.out.println(Arrays.toString(ReflectUtils.getSpecifiedAnnotationFields(Demo.class, ExcelColumn.class).toArray()));
+        System.out.println(Arrays.toString(ReflectUtils.getSpecifiedAnnotationMethods(Demo.class, ExcelColumn.class).toArray()));
+        System.out.println(Arrays.toString(ExcelConfigureUtil.getExcelColConfiguration(Demo.class)));
+        HashSet<Object> objects = new HashSet<>();
+        System.out.println(objects.add(1));
+        System.out.println(objects.add(1));
+    }
      public static void main(String[] args){
 
 
