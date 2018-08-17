@@ -2,13 +2,12 @@ package com.chl.excel.configure;
 
 import com.chl.excel.annotation.Excel;
 import com.chl.excel.annotation.ExcelColumn;
-import com.chl.excel.entity.ExcelColumnConf;
+import com.chl.excel.entity.ExcelCol;
 import com.chl.excel.exception.RepeatOrderException;
 import com.chl.excel.util.ReflectUtils;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.lang.reflect.Member;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,132 +17,98 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * 获取excel配置信息
+ *
  * @author LCH
  * @since 2018-07-02
  */
 public abstract class ExcelConfigureUtil {
 
 
-    private static ConcurrentMap<Class,ExcelColumnConf[]>   EXCEL_CONFIGURE =   new ConcurrentHashMap();
+    private static ConcurrentMap<Class, ExcelCol[]> excelConf = new ConcurrentHashMap();
 
-    public static ExcelColumnConf[] getExcelColumnConfiguration(Class clazz) throws RepeatOrderException {
 
-        ExcelColumnConf[] array;
-        if ((array = EXCEL_CONFIGURE.get(clazz)) != null){
-            return array;
+    public static ExcelCol[] getExcelColConfiguration(Class clazz) {
+
+        ExcelCol[] conf = excelConf.get(clazz);
+        if (conf != null) {
+            return conf;
         }
-        List<Field> fields = ReflectUtils.getSpecifiedAnnotationFields(clazz, ExcelColumn.class);
-        List<Method> methods = ReflectUtils.getSpecifiedAnnotationMethods(clazz, ExcelColumn.class);
-        array = new ExcelColumnConf[fields.size() + methods.size()];
-        array = getExcelColumnFieldArray(clazz, fields, array);
-        array = getExcelColumnMethodArray(clazz, methods, array, fields.size());
-        EXCEL_CONFIGURE.putIfAbsent(clazz,array);
-        return array;
+        List members = ReflectUtils.getSpecifiedAnnotationFields(clazz, ExcelColumn.class);
+        members.addAll(ReflectUtils.getSpecifiedAnnotationMethods(clazz, ExcelColumn.class));
+        conf = getExcelColumnArray(clazz, members);
+        excelConf.putIfAbsent(clazz, conf);
+        return conf;
 
     }
 
-    public static String getExcelTitleName(Class type){
+    public static String getExcelTitleName(Class type) {
 
         Excel annotation = (Excel) type.getAnnotation(Excel.class);
         return annotation.value();
     }
 
-    public static String getExcelVersion(Class type){
+    public static String getExcelVersion(Class type) {
 
         Excel annotation = (Excel) type.getAnnotation(Excel.class);
         return annotation.version();
     }
 
-    private static ExcelColumnConf[] getExcelColumnMethodArray(Class clazz, List<Method> methods, ExcelColumnConf[] conf, Integer startIndex) throws RepeatOrderException {
+    private static ExcelCol[] getExcelColumnArray(Class clazz, List<Member> members) throws RepeatOrderException {
 
 
-        Set<Integer> orderSets = new HashSet();
+        int length = members.size();
+        Set<Integer> orders = new HashSet();
+        ExcelCol[] conf = new ExcelCol[length];
         LinkedList<Integer> index = new LinkedList();
-        for (int i = 0, length = methods.size(), currIndex = startIndex; i < length; i++) {
-            Method method = methods.get(i);
-            ExcelColumnConf columnConf = createExcelColumnConf(method);
-            ExcelColumn excelColumn = method.getAnnotation(ExcelColumn.class);
+
+        for (int col = 0; col < length; col ++) {
+
+            Member member = members.get(col);
+            ExcelCol columnConf = createExcelColumn(member);
+            ExcelColumn excelColumn = ReflectUtils.getMemberAnnotation(member, ExcelColumn.class);
             Integer order = excelColumn.order();
-            currIndex = i + startIndex;
-            if (order > -1) {
-                if (orderSets.contains(order)) {
-                    throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order + "in the method [" + method.getName() + "]"
-                            + "which same as " + conf[order].getAnnotationField() != null ? "field [" + conf[order].getAnnotationField().getName() + "]" : "method [" + conf[order].getAnnotationMethod().getName() + "]");
-                }
-                orderSets.add(order);
+
+            if (order > -1 && !orders.add(order)) {
+
+                String memberName = member.getDeclaringClass().getName();
+                throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order +
+                        " in the member [" + memberName + "." + member.getName() + "]," + "which same as the" +
+                        " member [" + memberName + "." + conf[order].getMember().getName() + "]");
+
             } else {
-                order = (index.size() > 0) ? index.pop() : getFreeIndex(currIndex, conf);
+                order = (index.size() > 0) ? index.pop() : getFreeIndex(col, conf);
             }
+
             if (conf[order] != null) {
-                Integer tempIndex = (index.size() > 0) ? index.pop() : getFreeIndex(currIndex, conf);
-                ExcelColumnConf temp = conf[order];
+                Integer tempIndex = (index.size() > 0) ? index.pop() : getFreeIndex(col, conf);
+                ExcelCol temp = conf[order];
                 conf[order] = columnConf;
                 conf[tempIndex] = temp;
             } else {
                 conf[order] = columnConf;
             }
-            if (!index.contains(order = getFreeIndex(currIndex,conf)) && i != length - 1)
+
+            if (!index.contains(order = getFreeIndex(col, conf)) && col != length - 1) {
                 index.add(order);
+            }
         }
         return conf;
     }
 
-    private static ExcelColumnConf[] getExcelColumnFieldArray(Class clazz, List<Field> fields, ExcelColumnConf[] conf) throws RepeatOrderException {
 
+    private static ExcelCol createExcelColumn(Member member) {
 
-        Set<Integer> orderSets = new HashSet();
-        LinkedList<Integer> index = new LinkedList();
-        for (int i = 0, length = fields.size(); i < length; i++) {
-            Field field = fields.get(i);
-            ExcelColumnConf columnConf = createExcelColumnConf(field);
-            ExcelColumn excelColumn = field.getAnnotation(ExcelColumn.class);
-            Integer order = excelColumn.order();
-            if (order > -1) {
-                if (orderSets.contains(order)) {
-                    throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order
-                            + "in the field [" + field.getName() + "],which same as the field [" + conf[order].getAnnotationField().getName() + "]");
-                }
-                orderSets.add(order);
-            } else {
-                order = (index.size() > 0) ? index.pop() : getFreeIndex(i, conf);
-            }
-            if (conf[order] != null) {
-                Integer tempIndex = (index.size() > 0) ? index.pop() : getFreeIndex(i, conf);
-                ExcelColumnConf temp = conf[order];
-                conf[order] = columnConf;
-                conf[tempIndex] = temp;
-            } else {
-                conf[order] = columnConf;
-            }
-            if (!index.contains(order = getFreeIndex(i, conf)) && i != length - 1)
-                index.add(order);
-        }
-        return conf;
-    }
-
-    private static ExcelColumnConf createExcelColumnConf(Field field) {
-
-        ExcelColumnConf columnConf = new ExcelColumnConf();
-        columnConf.setAnnotationField(field);
-        Annotation[] annotations = field.getAnnotations();
+        ExcelCol column = new ExcelCol();
+        Annotation[] annotations = ReflectUtils.getMemberAnnotations(member);
         for (Annotation annotation : annotations) {
-            columnConf.addAnnotation(annotation);
+            column.addAnnotation(annotation);
         }
-        return columnConf;
+        column.setMember(member);
+        return column;
     }
 
-    private static ExcelColumnConf createExcelColumnConf(Method method) {
 
-        ExcelColumnConf columnConf = new ExcelColumnConf();
-        columnConf.setAnnotationMethod(method);
-        Annotation[] annotations = method.getAnnotations();
-        for (Annotation annotation : annotations) {
-            columnConf.addAnnotation(annotation);
-        }
-        return columnConf;
-    }
-
-    private static Integer getFreeIndex(int index, ExcelColumnConf[] conf) {
+    private static Integer getFreeIndex(int index, ExcelCol[] conf) {
 
         if (index < conf.length - 1 && conf[index] != null) {
             index = getFreeIndex(index + 1, conf);
