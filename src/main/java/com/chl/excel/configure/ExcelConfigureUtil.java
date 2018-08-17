@@ -8,10 +8,7 @@ import com.chl.excel.util.ReflectUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Member;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -61,14 +58,15 @@ public abstract class ExcelConfigureUtil {
         ExcelCol[] conf = new ExcelCol[length];
         LinkedList<Integer> index = new LinkedList();
 
-        for (int col = 0; col < length; col ++) {
+        for (int col = 0; col < length; col++) {
 
+            boolean hasOrder = false;
             Member member = members.get(col);
             ExcelCol columnConf = createExcelColumn(member);
             ExcelColumn excelColumn = ReflectUtils.getMemberAnnotation(member, ExcelColumn.class);
             Integer order = excelColumn.order();
 
-            if (order > -1 && !orders.add(order)) {
+            if (order > -1 && !(hasOrder = orders.add(order))) {
 
                 String memberName = member.getDeclaringClass().getName();
                 throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order +
@@ -88,8 +86,8 @@ public abstract class ExcelConfigureUtil {
                 conf[order] = columnConf;
             }
 
-            if (!index.contains(order = getFreeIndex(col, conf)) && col != length - 1) {
-                index.add(order);
+            if (hasOrder && col != order) {
+                index.add(getFreeIndex(col, conf));
             }
         }
         return conf;
@@ -109,6 +107,53 @@ public abstract class ExcelConfigureUtil {
 
 
     private static Integer getFreeIndex(int index, ExcelCol[] conf) {
+
+        if (index < conf.length - 1 && conf[index] != null) {
+            index = getFreeIndex(index + 1, conf);
+        }
+        return index;
+    }
+
+
+    public static void main(String[] args) {
+
+        try {
+            Set<Integer> orderSets = new HashSet();
+            LinkedList<Integer> index = new LinkedList();
+            List<Integer> list = Arrays.asList(0, 6, -1, -1, -1, 5, -1, 8, -1);
+            Integer[] conf = new Integer[list.size()];
+            long start = System.currentTimeMillis();
+            for (int i = 0, length = list.size(); i < length; i++) {
+
+                boolean hasOrder = false;
+                Integer order = list.get(i);
+                if (order > -1 && !(hasOrder = orderSets.add(order))) {
+                    throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order);
+                } else {
+                    order = (index.size() > 0) ? index.pop() : getFreeIndex(i, conf);
+                }
+                if (conf[order] != null) {
+                    Integer tempIndex = (index.size() > 0) ? index.pop() : getFreeIndex(i, conf);
+                    Integer temp = conf[order];
+                    conf[order] = order;
+                    conf[tempIndex] = tempIndex;
+                } else {
+                    conf[order] = order;
+                }
+
+                if (hasOrder && i != order){
+                    index.add(getFreeIndex(i, conf));
+                }
+            }
+            System.out.println("time : " + (System.currentTimeMillis() - start));
+            System.out.println(Arrays.toString(conf));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public static Integer getFreeIndex(Integer index, Integer[] conf) {
 
         if (index < conf.length - 1 && conf[index] != null) {
             index = getFreeIndex(index + 1, conf);
