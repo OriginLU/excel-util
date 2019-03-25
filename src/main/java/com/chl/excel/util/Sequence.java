@@ -1,5 +1,8 @@
 package com.chl.excel.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -98,24 +101,5 @@ public class Sequence {
             timestamp = System.currentTimeMillis();
         }
         return timestamp;
-    }
-
-    public static void main(String[] args) {
-
-        final Sequence idGenerator = new Sequence(1, 1);
-        //线程池并行执行10000次ID生成
-        ExecutorService executorService = Executors.newCachedThreadPool();
-        for (int i = 0; i < 10000; i++) {
-            executorService.execute(
-                    new Runnable() {
-
-                        @Override
-                        public void run() {
-                            long id = idGenerator.nextId();
-                            System.out.println(id);
-                        }
-                    });
-        }
-        executorService.shutdown();
     }
 }

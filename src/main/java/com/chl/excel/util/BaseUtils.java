@@ -90,21 +90,27 @@ import java.util.concurrent.ThreadFactory;
 
         private static ExecutorService executorService;
 
-        private static int coreCount = Runtime.getRuntime().availableProcessors();
+        public static  ExecutorService getInstance() {
 
-        public static synchronized ExecutorService getInstance() {
-
-            if (executorService != null && !executorService.isShutdown()) {
-                return executorService;
+            if (executorService == null && executorService.isShutdown()) {
+                synchronized (ExecutorFactory.class){
+                    if (executorService == null && executorService.isShutdown()) {
+                        int coreCount = Runtime.getRuntime().availableProcessors();
+                        executorService = Executors.newFixedThreadPool(coreCount, new ExecutorThreadFactory());
+                    }
+                }
             }
-            executorService = Executors.newFixedThreadPool(coreCount, new ExecutorThreadFactory());
             return executorService;
         }
 
         public static synchronized void close() {
 
             if (executorService != null && executorService.isShutdown()) {
-                executorService.shutdown();
+                synchronized (ExecutorFactory.class){
+                    if (executorService != null && executorService.isShutdown()) {
+                        executorService.shutdown();
+                    }
+                }
             }
         }
 

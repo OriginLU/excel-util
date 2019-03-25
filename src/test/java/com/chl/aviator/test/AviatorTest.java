@@ -1,13 +1,18 @@
 package com.chl.aviator.test;
 
 import com.chl.excel.util.ReflectUtils;
+import com.chl.jdbc.extension.expression.function.BlankFunction;
+import com.chl.jdbc.extension.expression.function.NullFunction;
 import com.googlecode.aviator.AviatorEvaluator;
+import com.googlecode.aviator.Expression;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.locks.LockSupport;
 
@@ -31,7 +36,29 @@ public class AviatorTest {
         Demo demo = new Demo();
         demo.setId(UUID.randomUUID().toString());
         demo.setName("AviatorContext");
-        System.out.println(AviatorEvaluator.exec("demo.name",demo));
+
+        Expression expression = AviatorEvaluator.compile("demo.name != ''");
+
+        Map<String, Object> paraMap = new HashMap<>();
+        paraMap.put("demo",demo);
+        boolean execute = (boolean) expression.execute(paraMap);
+        System.out.println(execute);
+    }
+
+    @Test
+    public void nullableTest(){
+
+
+            AviatorEvaluator.addFunction(new NullFunction());
+            AviatorEvaluator.addFunction(new BlankFunction());
+
+            Expression expression = AviatorEvaluator.compile("isBlank(name)");
+
+            Map<String, Object> paraMap = new HashMap<>();
+            paraMap.put("name","123456");
+            boolean execute = (boolean) expression.execute(paraMap);
+            System.out.println(execute);
+
     }
 
     @Test

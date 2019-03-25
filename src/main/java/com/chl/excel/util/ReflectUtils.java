@@ -220,7 +220,7 @@ public abstract class ReflectUtils {
 
         List methods;
         Class superclass = clazz.getSuperclass();
-        if (Object.class != superclass) {
+        if (superclass != null && Object.class != superclass) {
             methods = getMethods(superclass);
         }
         else {
