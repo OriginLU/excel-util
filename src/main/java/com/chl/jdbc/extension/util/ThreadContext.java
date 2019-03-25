@@ -9,39 +9,25 @@ import java.util.Map;
  */
 public class ThreadContext {
 
-    private static ThreadLocal<Map<String,Object>> THREAD_CONTEXT = ThreadLocal.withInitial(() -> new HashMap<>());
+    private static ThreadLocal<Map<String, Object>> THREAD_CONTEXT = ThreadLocal.withInitial(() -> new HashMap<>());
 
 
     public static Object getValue(String key) {
-
-        Map<String, Object> objectMap = THREAD_CONTEXT.get();
-
-        return objectMap.get(key);
-
+        return THREAD_CONTEXT.get().get(key);
     }
 
 
-    public static void put(String key,Object value){
-
-        Map<String, Object> objectMap = THREAD_CONTEXT.get();
-
-        objectMap.put(key,value);
+    public static void put(String key, Object value) {
+        THREAD_CONTEXT.get().put(key, value);
     }
 
 
-
-    public static void remove(String key){
-
-        Map<String, Object> objectMap = THREAD_CONTEXT.get();
-
-        objectMap.remove(key);
+    public static void remove(String key) {
+        THREAD_CONTEXT.get().remove(key);
     }
 
-    public static void clear(){
-
-        Map<String, Object> objectMap = THREAD_CONTEXT.get();
-
-        objectMap.clear();
+    public static void clear() {
+        THREAD_CONTEXT.get().clear();
     }
 
 
