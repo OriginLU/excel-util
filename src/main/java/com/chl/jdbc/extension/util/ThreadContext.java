@@ -9,13 +9,7 @@ import java.util.Map;
  */
 public class ThreadContext {
 
-    private static ThreadLocal<Map<String,Object>> THREAD_CONTEXT = new ThreadLocal<Map<String, Object>>(){
-
-        @Override
-        protected Map<String, Object> initialValue() {
-            return new HashMap<>();
-        }
-    };
+    private static ThreadLocal<Map<String,Object>> THREAD_CONTEXT = ThreadLocal.withInitial(() -> new HashMap<>());
 
 
     public static Object getValue(String key) {
