@@ -13,9 +13,6 @@ import java.util.Map;
 
 /**
  * velocity template load tool,it provide two way to load template file
- *
- * @author chlu
- * @version 20190305
  */
 public enum VelocityTemplate {
 
