@@ -27,7 +27,17 @@ public abstract class EnvUtils {
         }
         else if (object instanceof Object[])
         {
-            return null;
+            Map<String, Object> env = new HashMap<>();
+            Object[] objects = (Object[]) object;
+            for (Object o : objects)
+            {
+                Map<String, Object> env1 = getEnv(o);
+                if (env1 != null)
+                {
+                    env.putAll(env1);
+                }
+            }
+            return env;
         }
         else
         {
