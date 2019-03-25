@@ -26,8 +26,6 @@ public abstract class ReflectUtils {
             field.set(obj, value);
         } catch (IllegalAccessException e) {
             //ignore this exception
-        } finally {
-            field.setAccessible(accessible);
         }
     }
 
