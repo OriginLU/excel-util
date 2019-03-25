@@ -15,6 +15,9 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface Conditions {
 
 
+    /**
+     * must be unique
+     */
     String name() default "";
 
     Condition[] value() default {};

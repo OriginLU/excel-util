@@ -21,9 +21,9 @@ import java.util.concurrent.ThreadFactory;
  abstract class BaseUtils {
 
 
-    protected static int SHEET_COUNT = 1000;
+    private static int SHEET_COUNT = 1000;
 
-    private static Sequence sequence = new Sequence(2l, 2l);
+    private static Sequence sequence = new Sequence(2L, 2L);
 
     protected static Object getValue(Object obj,ExcelCol config) {
 

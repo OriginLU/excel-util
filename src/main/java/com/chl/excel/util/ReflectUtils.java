@@ -7,7 +7,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -34,50 +33,27 @@ public abstract class ReflectUtils {
 
     public static void setFieldValue(String fieldName, Object obj, Object value) throws NoSuchFieldException {
 
-        final Class clazz = obj.getClass();
+        final Class<?> clazz = obj.getClass();
         Field field = getField(clazz, fieldName);
         setFieldValue(field, obj, value);
 
     }
 
 
-    /**
-     * @param target
-     * @param methodName
-     * @param args
-     * @return
-     * @throws NoSuchMethodException
-     * @throws InvocationTargetException
-     */
     public static Object invokeMethod(Object target, String methodName, Object... args) throws NoSuchMethodException, InvocationTargetException {
 
-        Class clazz = target.getClass();
+        Class<?> clazz = target.getClass();
         Class[] classes = new Class[args.length];
-        for (int i = 0; i < args.length; i++) {
+        for (int i = 0; i < args.length; i++)
+        {
             classes[i] = args[i].getClass();
         }
         Method method = getMethod(clazz, methodName, classes);
-        boolean accessible = method.isAccessible();
-        if (!accessible) {
-            method.setAccessible(true);
-        }
-        try {
-            return method.invoke(target, args);
-        } catch (IllegalAccessException e) {
-            //ignore this exception
-        } finally {
-            method.setAccessible(accessible);
-        }
-        return null;
+
+        return invokeMethod(target,method,args);
     }
 
-    /**
-     * @param target
-     * @param args
-     * @return
-     * @throws NoSuchMethodException
-     * @throws InvocationTargetException
-     */
+
     public static Object invokeMethod(Object target, Method method, Object... args) throws InvocationTargetException {
 
         boolean accessible = method.isAccessible();
@@ -88,8 +64,6 @@ public abstract class ReflectUtils {
             return method.invoke(target, args);
         } catch (IllegalAccessException e) {
             //ignore this exception
-        } finally {
-            method.setAccessible(accessible);
         }
         return null;
     }
@@ -97,43 +71,38 @@ public abstract class ReflectUtils {
 
     /**
      * 获取指定域
-     *
-     * @param clazz 搜索字段指定类
-     * @param name  搜字段名
-     * @return 指定字段类型
-     * @throws NoSuchFieldException 未找到指定字段类型
      */
-    public static Field getField(Class clazz, String name) throws NoSuchFieldException {
+    public static Field getField(Class<?> clazz, String name) throws NoSuchFieldException {
 
-        Field field = null;
-        try {
-            field = clazz.getDeclaredField(name);
-        } catch (NoSuchFieldException e) {
+        try
+        {
+            return clazz.getDeclaredField(name);
+        }
+        catch (NoSuchFieldException e)
+        {
             Class superclass = clazz.getSuperclass();
-            if (superclass == null) {
+            if (superclass == null)
+            {
                 throw new NoSuchFieldException("not found field [" + name + "]");
             }
-            field = getField(superclass, name);
+            return getField(superclass, name);
         }
-        return field;
     }
 
     /**
      * 获取目标方法
-     *
-     * @param target     目标类
-     * @param methodName 目标方法
-     * @param paramTypes 参数列表
-     * @return
-     * @throws NoSuchMethodException
      */
-    public static Method getMethod(Class target, String methodName, Class... paramTypes) throws NoSuchMethodException {
+    public static Method getMethod(Class<?> target, String methodName, Class<?> ... paramTypes) throws NoSuchMethodException {
 
-        try {
+        try
+        {
             return target.getDeclaredMethod(methodName, paramTypes);
-        } catch (NoSuchMethodException e) {
+        }
+        catch (NoSuchMethodException e)
+        {
             target = target.getSuperclass();
-            if (target == null) {
+            if (target == null)
+            {
                 throw new NoSuchMethodException("not found [" + methodName + "(" + Arrays.asList(paramTypes) + ")] method");
             }
             return getMethod(target, methodName, paramTypes);
@@ -141,70 +110,37 @@ public abstract class ReflectUtils {
     }
 
 
-    /**
-     * @param obj
-     * @param name
-     * @param <T>
-     * @return
-     * @throws NoSuchFieldException
-     */
-    public static <T> T getFieldValue(Object obj, String name) throws NoSuchFieldException {
 
-        final Class clazz = obj.getClass();
-        Field field = getField(clazz, name);
-        boolean accessible = field.isAccessible();
-        if (!accessible) {
-            field.setAccessible(true);
-        }
-        try {
-            return (T) field.get(obj);
-        } catch (IllegalAccessException e) {
-            //ignore this exception
-        } finally {
-            field.setAccessible(accessible);
-        }
-        return null;
-    }
-
-    /**
-     * @param obj
-     * @param field
-     * @param <T>
-     * @return
-     * @throws NoSuchFieldException
-     */
     public static <T> T getFieldValue(Object obj, Field field){
 
-        final Class clazz = obj.getClass();
         boolean accessible = field.isAccessible();
-        if (!accessible) {
+        if (!accessible)
+        {
             field.setAccessible(true);
         }
-        try {
+        try
+        {
             return (T) field.get(obj);
-        } catch (IllegalAccessException e) {
+        }
+        catch (IllegalAccessException e)
+        {
             //ignore this exception
-        } finally {
-            field.setAccessible(accessible);
         }
         return null;
     }
 
     /**
      * 获取所有的声明域，包含父类
-     *
-     * @param clazz
-     * @return
      */
-    public static List<Field> getFields(Class clazz) {
+    public static List<Field> getFields(Class<?> clazz) {
 
-        List fields;
-        Class superclass = clazz.getSuperclass();
-        if (Object.class != superclass) {
+        List<Field> fields;
+        Class<?> superclass = clazz.getSuperclass();
+        if (superclass != null && Object.class != superclass) {
             fields = getFields(superclass);
         }
         else {
-            fields = new ArrayList();
+            fields = new ArrayList<>();
         }
         fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
         return fields;
@@ -212,19 +148,17 @@ public abstract class ReflectUtils {
 
     /**
      * 获取所有的声明方法，包含父类
-     *
-     * @param clazz
-     * @return
      */
     public static List<Method> getMethods(Class clazz) {
 
-        List methods;
+        List<Method> methods;
         Class superclass = clazz.getSuperclass();
-        if (superclass != null && Object.class != superclass) {
+        if (superclass != null && Object.class != superclass)
+        {
             methods = getMethods(superclass);
         }
         else {
-            methods = new ArrayList();
+            methods = new ArrayList<>();
         }
         methods.addAll(Arrays.asList(clazz.getDeclaredMethods()));
         return methods;
@@ -232,23 +166,24 @@ public abstract class ReflectUtils {
 
     /**
      * 获取的指定注解声明域
-     *
-     * @param clazz
-     * @param annotationClass
-     * @return
      */
-    public static List<Field> getSpecifiedAnnotationFields(Class clazz, Class annotationClass) {
+    public static List<Field> getSpecifiedAnnotationFields(Class clazz, Class<? extends Annotation> annotationClass) {
 
-        List list;
-        Class superclass = clazz.getSuperclass();
-        if (Object.class != superclass) {
+        List<Field> list;
+        Class<?> superclass = clazz.getSuperclass();
+        if (superclass != null && Object.class != superclass)
+        {
             list = getSpecifiedAnnotationFields(superclass, annotationClass);
-        }else {
-            list = new ArrayList();
+        }
+        else
+        {
+            list = new ArrayList<>();
         }
         Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields) {
-            if (field.isAnnotationPresent(annotationClass)) {
+        for (Field field : fields)
+        {
+            if (field.isAnnotationPresent(annotationClass))
+            {
                 list.add(field);
             }
         }
@@ -257,19 +192,15 @@ public abstract class ReflectUtils {
 
     /**
      * 获取的指定注解方法
-     *
-     * @param clazz
-     * @param annotationClass
-     * @return
      */
-    public static List<Method> getSpecifiedAnnotationMethods(Class clazz, Class annotationClass) {
+    public static List<Method> getSpecifiedAnnotationMethods(Class clazz, Class<? extends Annotation> annotationClass) {
 
-        List list;
+        List<Method> list;
         Class superclass = clazz.getSuperclass();
-        if (Object.class != superclass) {
+        if (superclass != null && Object.class != superclass) {
             list = getSpecifiedAnnotationMethods(superclass, annotationClass);
         }else {
-            list = new ArrayList();
+            list = new ArrayList<>();
         }
         Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods) {
@@ -295,7 +226,7 @@ public abstract class ReflectUtils {
     }
 
 
-    public static <T extends Annotation> T getMemberAnnotation(Member member,Class type){
+    public static <T extends Annotation> T getMemberAnnotation(Member member,Class<? extends Annotation> type){
 
         if (member instanceof Field){
             return (T) ((Field) member).getAnnotation(type);

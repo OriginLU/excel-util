@@ -1,5 +1,7 @@
 package com.chl.jdbc.extension.annotation;
 
+import com.chl.jdbc.extension.expression.ExpressionConstants;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -16,9 +18,12 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface Condition {
 
 
+    /**
+     * must be unique
+     */
     String name() default "";
 
-    String expression();
+    String expression() default ExpressionConstants.TRUE;
 
     String condition();
 }
