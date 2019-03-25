@@ -23,28 +23,25 @@ public abstract class RowMapperUtils {
 
     private static final Logger log = LoggerFactory.getLogger(RowMapperUtils.class);
 
-    private static final Map<String, String> jdbcTypeCache = new HashMap(8);
+    private static final Map<String, String> jdbcTypeCache = new HashMap<>(8);
 
-    private static final Map<Class, String> requireTypeMethodNameCache = new HashMap(16);
+    private static final Map<Class, String> requireTypeMethodNameCache = new HashMap<>(16);
 
-    private static final ConcurrentMap<Class, List<Field>> fieldCache = new ConcurrentHashMap(8);
+    private static final ConcurrentMap<Class, List<Field>> fieldCache = new ConcurrentHashMap<>(8);
 
-    private static final ConcurrentMap<Class, RowMapper> rowMappersBeanCache = new ConcurrentHashMap(8);
+    private static final ConcurrentMap<Class, RowMapper> rowMappersBeanCache = new ConcurrentHashMap<>(8);
 
 
     public static RowMapper getRowMapper(Class clazz) {
 
-        RowMapper rowMapper = (RowMapper) rowMappersBeanCache.get(clazz);
+        RowMapper rowMapper = rowMappersBeanCache.get(clazz);
         if (rowMapper != null)
         {
             return rowMapper;
         }
-        else
-        {
-            rowMapper = createRowMapper(clazz);
-            rowMappersBeanCache.putIfAbsent(clazz, rowMapper);
-            return rowMapper;
-        }
+        rowMapper = createRowMapper(clazz);
+        rowMappersBeanCache.putIfAbsent(clazz, rowMapper);
+        return rowMapper;
     }
 
     private static RowMapper createRowMapper(Class clazz) {
@@ -77,7 +74,9 @@ public abstract class RowMapperUtils {
     }
 
     private static void setValue(Field field, Object target, Object value) {
-        if (!field.isAccessible()) {
+
+        if (!field.isAccessible())
+        {
             field.setAccessible(true);
         }
 
@@ -85,54 +84,68 @@ public abstract class RowMapperUtils {
     }
 
     private static Object getValue(Field field, ResultSet resultSet) {
-        try {
+
+        try
+        {
             return getSourceObject(field, resultSet);
-        } catch (Exception var3) {
-            log.error("an error occurred while getting target object", var3);
-            throw new RuntimeException("an error occurred while getting target object", var3);
+        }
+        catch (Exception e)
+        {
+            log.error("an error occurred while getting target object", e);
+            throw new RuntimeException("an error occurred while getting target object", e);
         }
     }
 
     private static Object getSourceObject(Field field, ResultSet resultSet) throws Exception {
 
-        Column column = (Column) field.getAnnotation(Column.class);
+        Column column = field.getAnnotation(Column.class);
 
         try {
+
             String name = getColumnName(field, column);
             String methodName = getMethodName(field, column);
-            if (StringUtils.isBlank(methodName)) {
+            if (StringUtils.isBlank(methodName))
+            {
                 throw new NoSuchMethodException("not found " + methodName);
-            } else {
-                Method method = ReflectionUtils.findMethod(resultSet.getClass(), methodName, String.class);
-                if (method == null) {
-                    throw new NoSuchMethodException("not found " + methodName);
-                } else {
-                    return ReflectionUtils.invokeMethod(method, resultSet, name);
-                }
             }
-        } catch (Exception e) {
-            if (required(column)) {
+            Method method = ReflectionUtils.findMethod(resultSet.getClass(), methodName, String.class);
+            if (method == null)
+            {
+                throw new NoSuchMethodException("not found " + methodName);
+            }
+
+            return ReflectionUtils.invokeMethod(method, resultSet, name);
+
+        }
+        catch (Exception e)
+        {
+            if (required(column))
+            {
                 throw e;
-            } else {
-                return null;
             }
+            return null;
+
         }
     }
 
     private static String getMethodName(Field field, Column column) {
+
         Class<?> requireType = field.getType();
-        if (column != null) {
+        if (column != null)
+        {
             String jdbcType = column.jdbcType().trim().toLowerCase();
-            if (StringUtils.isNotBlank(jdbcType)) {
-                return (String) jdbcTypeCache.get(jdbcType);
+            if (StringUtils.isNotBlank(jdbcType))
+            {
+                return  jdbcTypeCache.get(jdbcType);
             }
         }
 
-        return (String) requireTypeMethodNameCache.get(requireType);
+        return  requireTypeMethodNameCache.get(requireType);
     }
 
     private static String getColumnName(Field field, Column column) {
-        return column != null && StringUtils.isNotBlank(column.name()) ? column.name().trim() : field.getName();
+
+        return (column != null && StringUtils.isNotBlank(column.name())) ? column.name().trim() : field.getName();
     }
 
     private static boolean required(Column column) {
@@ -140,20 +153,26 @@ public abstract class RowMapperUtils {
     }
 
     private static List<Field> getFields(Class clazz) {
-        List<Field> fieldSet = (List) fieldCache.get(clazz);
-        if (fieldSet != null) {
-            return fieldSet;
-        } else {
-            List<Field> fields = new ArrayList();
-            ReflectionUtils.doWithFields(clazz, (field) -> {
-                if (!Modifier.isStatic(field.getModifiers())) {
-                    fields.add(field);
-                }
 
-            });
-            fieldCache.putIfAbsent(clazz, fields);
-            return fields;
+        List<Field> fieldSet = (List) fieldCache.get(clazz);
+        if (fieldSet != null)
+        {
+            return fieldSet;
         }
+
+        List<Field> fields = new ArrayList<>();
+        fieldCache.putIfAbsent(clazz, fields);
+
+        ReflectionUtils.doWithFields(clazz, (field) -> {
+            if (!Modifier.isStatic(field.getModifiers()))
+            {
+                fields.add(field);
+            }
+
+        });
+
+        return fields;
+
     }
 
     static {
