@@ -7,7 +7,7 @@ import java.util.Map;
  * @author lch
  * @since 2019-03-24
  */
-public class ThreadContext {
+public abstract class ThreadContext {
 
     private static ThreadLocal<Map<String, Object>> THREAD_CONTEXT = ThreadLocal.withInitial(HashMap::new);
 

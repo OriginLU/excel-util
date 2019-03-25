@@ -12,6 +12,7 @@ import com.chl.jdbc.extension.expression.ExpressionConstants;
 import com.chl.jdbc.extension.expression.function.BlankFunction;
 import com.chl.jdbc.extension.expression.function.NullFunction;
 import com.chl.jdbc.extension.util.CollectionUtils;
+import com.chl.jdbc.extension.util.KeyNameUtils;
 import com.chl.jdbc.extension.util.StringUtils;
 import com.chl.jdbc.extension.util.ThreadContext;
 import com.googlecode.aviator.AviatorEvaluator;
@@ -67,7 +68,7 @@ public class AnnotationSQLParser {
     private void parse(Method method, SQLContext sqlContext,List<SQLConfig> completedList){
 
 
-        String name = method.getDeclaringClass().getName() + "." + method.getName();
+        String name = KeyNameUtils.getName(method);
 
         Annotation[] annotations = method.getDeclaredAnnotations();
 

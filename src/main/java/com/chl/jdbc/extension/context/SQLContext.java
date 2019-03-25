@@ -55,16 +55,15 @@ public class SQLContext {
 
         if (!isInitCompleted(clazz))
         {
-            initClassCache.put(clazz,false);
             sqlParser.parse(clazz,this);
             initClassCache.put(clazz,true);
+            sqlConfig = sqlConfigCache.get(name);
         }
 
-        sqlConfig = sqlConfigCache.get(name);
 
         if (sqlConfig == null)
         {
-            throw new NotFoundConfiguration("not found SQL configuration ["+ name +"],please check");
+            throw new NotFoundConfiguration("not found SQL configuration [" + name + "],please check");
         }
 
         return sqlConfig;
