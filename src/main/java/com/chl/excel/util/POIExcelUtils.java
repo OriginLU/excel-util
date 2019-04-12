@@ -36,8 +36,6 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     private static int CELL_WIDTH = 200;
 
-    private static Sequence sequence = new Sequence(1l, 1l);
-
 
     public static Workbook createExcel(List list, Class type) {
 
@@ -72,12 +70,6 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     /**
      * create cell data for per row
-     *
-     * @param workbook
-     * @param sheet
-     * @param list
-     * @param configs
-     * @param rowNum
      */
     private static void createContentRow(Workbook workbook, Sheet sheet, List list, ExcelCol[] configs, int rowNum) {
 
@@ -103,11 +95,6 @@ public abstract class POIExcelUtils extends BaseUtils{
     /**
      * create column name for excel
      *
-     * @param workbook
-     * @param sheet
-     * @param configs
-     * @param rowNum
-     * @return
      */
     private static int createColumnNameRow(Workbook workbook, Sheet sheet, ExcelCol[] configs, int rowNum) {
 
@@ -126,12 +113,6 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     /**
      * create title
-     *
-     * @param book
-     * @param sheet
-     * @param titleName
-     * @param columnLength
-     * @return
      */
     private static int createTitleRow(Workbook book, Sheet sheet, String titleName, int columnLength) {
 
@@ -152,8 +133,6 @@ public abstract class POIExcelUtils extends BaseUtils{
     /**
      * 设置标题样式
      *
-     * @param wb
-     * @return
      */
     private static CellStyle getTitleCellStyle(Workbook wb) {
 
@@ -177,9 +156,6 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     /**
      * 设置单元格样式
-     *
-     * @param wb
-     * @return
      */
     private static CellStyle getColumnNameCellStyle(Workbook wb) {
 
@@ -218,9 +194,6 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     /**
      * the excel files is created by multi thread
-     * @param list
-     * @param type
-     * @return the created files path
      */
     public static String createExcelFiles(final List list, final Class type, Integer sheetCount) {
 
@@ -303,9 +276,6 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     /**
      * merge excel
-     * @param fromWorkBook
-     * @param toWorkBook
-     * @param sheetName
      */
     public static void mergeExcel(Workbook fromWorkBook, Workbook toWorkBook, String sheetName) {
 
