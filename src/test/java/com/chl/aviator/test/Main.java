@@ -3,10 +3,10 @@ package com.chl.aviator.test;
 
 import com.chl.jdbc.extension.conf.SQLConfig;
 import com.chl.jdbc.extension.context.SQLContext;
+import com.chl.jdbc.extension.proxy.ProxyFactory;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Proxy;
+import java.util.*;
 
 /**
  * @author lch
@@ -18,15 +18,11 @@ public class Main {
     public static void main(String[] args)  {
 
 
-        SQLContext context = SQLContext.getInstance();
+        TestSQL testSQL = ProxyFactory.createProxy(TestSQL.class);
 
-        SQLConfig sqlConfig = context.getSQLConfig("com.chl.aviator.test.TestSQL.testDemo", TestSQL.class);
 
-        Map<String, Object> paraMap = new HashMap<>();
+        List<String> strings = testSQL.testDemo(new ArrayList());
 
-        paraMap.put("startTime",new Date());
-
-        System.out.println(sqlConfig.getSQL(paraMap));
 
     }
 

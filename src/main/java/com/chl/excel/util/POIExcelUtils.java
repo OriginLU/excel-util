@@ -82,6 +82,7 @@ public abstract class POIExcelUtils extends BaseUtils{
             Row row = sheet.createRow(rowIndex);
             Object obj = list.get(data);
             for (int col = 0; col < columnLength; col++) { //create cell for row
+
                 ExcelCol config = configs[col];
                 Object result = getValue(obj,config);
                 Cell cell = row.createCell(col);
@@ -277,7 +278,7 @@ public abstract class POIExcelUtils extends BaseUtils{
     /**
      * merge excel
      */
-    public static void mergeExcel(Workbook fromWorkBook, Workbook toWorkBook, String sheetName) {
+    private static void mergeExcel(Workbook fromWorkBook, Workbook toWorkBook, String sheetName) {
 
         try {
             for (int i = 0; i < fromWorkBook.getNumberOfSheets(); i++) {
@@ -296,11 +297,14 @@ public abstract class POIExcelUtils extends BaseUtils{
 
 
     private static void copySheet(Workbook wb, Sheet fromSheet, Sheet toSheet) {
+
         mergeSheetAllRegion(fromSheet, toSheet);
-        for (int i = 0; i <= fromSheet.getRow(fromSheet.getFirstRowNum()).getLastCellNum(); i++) {
+        for (int i = 0; i <= fromSheet.getRow(fromSheet.getFirstRowNum()).getLastCellNum(); i++)
+        {
             toSheet.setColumnWidth(i, fromSheet.getColumnWidth(i));
         }
-        for (Iterator rowIt = fromSheet.rowIterator(); rowIt.hasNext(); ) {
+        for (Iterator rowIt = fromSheet.rowIterator(); rowIt.hasNext(); )
+        {
             Row oldRow = (Row) rowIt.next();
             Row newRow = toSheet.createRow(oldRow.getRowNum());
             copyRow(wb, oldRow, newRow);
@@ -308,48 +312,72 @@ public abstract class POIExcelUtils extends BaseUtils{
     }
 
     private static void mergeSheetAllRegion(Sheet fromSheet, Sheet toSheet) {//合并单元格
+
+
         int num = fromSheet.getNumMergedRegions();
-        CellRangeAddress cellR = null;
-        for (int i = 0; i < num; i++) {
-            cellR = fromSheet.getMergedRegion(i);
+        for (int i = 0; i < num; i++)
+        {
+            CellRangeAddress cellR = fromSheet.getMergedRegion(i);
             toSheet.addMergedRegion(cellR);
         }
     }
 
     private static void copyCell(Workbook wb, Cell fromCell, Cell toCell) {
+
         CellStyle newStyle = wb.createCellStyle();
         copyCellStyle(fromCell.getCellStyle(), newStyle);
         toCell.setCellStyle(newStyle);
-        if (fromCell.getCellComment() != null) {
+
+        if (fromCell.getCellComment() != null)
+        {
             toCell.setCellComment(fromCell.getCellComment());
         }
         int fromCellType = fromCell.getCellType();
         toCell.setCellType(fromCellType);
-        if (fromCellType == XSSFCell.CELL_TYPE_NUMERIC) {
-            if (XSSFDateUtil.isCellDateFormatted(fromCell)) {
+
+        if (fromCellType == XSSFCell.CELL_TYPE_NUMERIC)
+        {
+            if (XSSFDateUtil.isCellDateFormatted(fromCell))
+            {
                 toCell.setCellValue(fromCell.getDateCellValue());
-            } else {
+            }
+            else
+            {
                 toCell.setCellValue(fromCell.getNumericCellValue());
             }
-        } else if (fromCellType == XSSFCell.CELL_TYPE_STRING) {
-            toCell.setCellValue(fromCell.getRichStringCellValue());
-        } else if (fromCellType == XSSFCell.CELL_TYPE_BLANK) {
-
-        } else if (fromCellType == XSSFCell.CELL_TYPE_BOOLEAN) {
-            toCell.setCellValue(fromCell.getBooleanCellValue());
-        } else if (fromCellType == XSSFCell.CELL_TYPE_ERROR) {
-            toCell.setCellErrorValue(fromCell.getErrorCellValue());
-        } else if (fromCellType == XSSFCell.CELL_TYPE_FORMULA) {
-            toCell.setCellFormula(fromCell.getCellFormula());
-        } else {
         }
-
+        else if (fromCellType == XSSFCell.CELL_TYPE_STRING)
+        {
+            toCell.setCellValue(fromCell.getRichStringCellValue());
+        }
+        else if (fromCellType == XSSFCell.CELL_TYPE_BLANK)
+        {
+            toCell.setCellValue(fromCell.getRichStringCellValue());
+        }
+        else if (fromCellType == XSSFCell.CELL_TYPE_BOOLEAN)
+        {
+            toCell.setCellValue(fromCell.getBooleanCellValue());
+        }
+        else if (fromCellType == XSSFCell.CELL_TYPE_ERROR)
+        {
+            toCell.setCellErrorValue(fromCell.getErrorCellValue());
+        }
+        else if (fromCellType == XSSFCell.CELL_TYPE_FORMULA)
+        {
+            toCell.setCellFormula(fromCell.getCellFormula());
+        }
+        else
+        {
+            toCell.setCellValue(fromCell.getRichStringCellValue());
+        }
     }
 
 
     private static void copyRow(Workbook wb, Row oldRow, Row toRow) {
+
         toRow.setHeight(oldRow.getHeight());
-        for (Iterator cellIt = oldRow.cellIterator(); cellIt.hasNext(); ) {
+        for (Iterator cellIt = oldRow.cellIterator(); cellIt.hasNext(); )
+        {
             Cell tmpCell = (XSSFCell) cellIt.next();
             Cell newCell = toRow.createCell(tmpCell.getColumnIndex());
             copyCell(wb, tmpCell, newCell);

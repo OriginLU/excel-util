@@ -12,8 +12,6 @@ import jxl.format.UnderlineStyle;
 import jxl.format.VerticalAlignment;
 import jxl.write.*;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -24,7 +22,6 @@ import java.util.List;
  */
 public class JXLExcelUtils extends BaseUtils {
 
-    private final static Logger log = LoggerFactory.getLogger(JXLExcelUtils.class);
 
     public static byte[] createExcel(List list, Class type) {
 
@@ -33,7 +30,7 @@ public class JXLExcelUtils extends BaseUtils {
             ExcelCol[] conf = ExcelConfigureUtil.getExcelColConfiguration(type);
             String titleName = ExcelConfigureUtil.getExcelTitleName(type);
             WritableWorkbook workbook = Workbook.createWorkbook(os);
-            WritableSheet sheet = createSheet(workbook,titleName,type,0);
+            WritableSheet sheet = createDefaultSheet(workbook,titleName,type);
             int rowIndex = createTitleRow(sheet, titleName, conf.length);
             rowIndex = createColumnTitleRow(sheet, conf, rowIndex);
             createContentRow(sheet, list, conf, rowIndex);
@@ -45,20 +42,15 @@ public class JXLExcelUtils extends BaseUtils {
         }
     }
 
-    private static WritableSheet createSheet(WritableWorkbook workbook,String titleName,Class type,int index){
+    private static WritableSheet createDefaultSheet(WritableWorkbook workbook, String titleName, Class type){
 
         String sheetName = StringUtils.isBlank(titleName) ? type.getSimpleName() : titleName;
-        WritableSheet sheet = workbook.createSheet(titleName, index);
-        return sheet;
+        return workbook.createSheet(sheetName, 0);
     }
 
     /**
      * 创建标题
      *
-     * @param sheet
-     * @param titleName
-     * @param columnLength
-     * @return
      */
     private static int createTitleRow(WritableSheet sheet, String titleName, int columnLength) {
 
@@ -79,10 +71,6 @@ public class JXLExcelUtils extends BaseUtils {
 
     /**
      * 创建列标题
-     * @param sheet
-     * @param configs
-     * @param rowNum
-     * @return
      */
     private static int createColumnTitleRow(WritableSheet sheet, ExcelCol[] configs, int rowNum) {
 
@@ -104,11 +92,6 @@ public class JXLExcelUtils extends BaseUtils {
 
     /**
      * 创建数据行
-     *
-     * @param sheet
-     * @param list
-     * @param configs
-     * @param rowNum
      */
     private static void createContentRow(WritableSheet sheet, List list, ExcelCol[] configs, int rowNum) {
 
@@ -138,7 +121,6 @@ public class JXLExcelUtils extends BaseUtils {
     /**
      * 设置自动宽度
      *
-     * @return
      */
     private static CellView getCellView() {
 
@@ -150,7 +132,6 @@ public class JXLExcelUtils extends BaseUtils {
     /**
      * 设置标题样式
      *
-     * @return
      */
     private static CellFormat getTitleCellFormat() {
 
