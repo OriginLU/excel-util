@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -23,28 +24,28 @@ public abstract class RowMapperUtils {
 
     private static final Logger log = LoggerFactory.getLogger(RowMapperUtils.class);
 
-    private static final Map<String, String> jdbcTypeCache = new HashMap<>(8);
+    private static final Map<String, String> JDBC_TYPE_CACHE = new HashMap<>(8);
 
-    private static final Map<Class, String> requireTypeMethodNameCache = new HashMap<>(16);
+    private static final Map<Class, String> REQUIRE_TYPE_METHOD_NAME_CACHE = new HashMap<>(16);
 
-    private static final ConcurrentMap<Class, List<Field>> fieldCache = new ConcurrentHashMap<>(8);
+    private static final ConcurrentMap<Class, List<Field>> FIELD_CACHE = new ConcurrentHashMap<>(8);
 
-    private static final ConcurrentMap<Class, RowMapper> rowMappersBeanCache = new ConcurrentHashMap<>(8);
+    private static final ConcurrentMap<Class, RowMapper> ROW_MAPPER_BEAN_CACHE = new ConcurrentHashMap<>(8);
 
 
-    public static RowMapper getRowMapper(Class clazz) {
+    @SuppressWarnings("unchecked")
+    public static  <T> RowMapper<T> getRowMapper(Class<?> clazz) {
 
-        RowMapper rowMapper = rowMappersBeanCache.get(clazz);
-        if (rowMapper != null)
+        RowMapper rowMapper = ROW_MAPPER_BEAN_CACHE.get(clazz);
+        if (rowMapper == null)
         {
-            return rowMapper;
+            rowMapper = createRowMapper(clazz);
+            ROW_MAPPER_BEAN_CACHE.putIfAbsent(clazz, rowMapper);
         }
-        rowMapper = createRowMapper(clazz);
-        rowMappersBeanCache.putIfAbsent(clazz, rowMapper);
         return rowMapper;
     }
 
-    private static RowMapper createRowMapper(Class clazz) {
+    private static  RowMapper createRowMapper(Class clazz) {
 
         return (result, num) -> {
             try {
@@ -61,7 +62,7 @@ public abstract class RowMapperUtils {
                 }
 
 
-                return target;
+                return  target;
             } catch (Exception e) {
                 log.error("create instance fail ", e);
                 throw new RuntimeException(e);
@@ -73,14 +74,27 @@ public abstract class RowMapperUtils {
         return field.isAnnotationPresent(Transient.class);
     }
 
-    private static void setValue(Field field, Object target, Object value) {
+    private static void setValue(Member member, Object target, Object value) {
 
-        if (!field.isAccessible())
+        if (member instanceof  Field)
         {
-            field.setAccessible(true);
-        }
+            final Field field = (Field) member;
+            if (!field.isAccessible())
+            {
+                field.setAccessible(true);
+            }
 
-        ReflectionUtils.setField(field, target, value);
+            ReflectionUtils.setField(field, target, value);
+        }
+        else if (member instanceof Method)
+        {
+            final Method method = (Method) member;
+            if (!method.isAccessible())
+            {
+                method.setAccessible(true);
+            }
+            ReflectionUtils.invokeMethod(method, target, value);
+        }
     }
 
     private static Object getValue(Field field, ResultSet resultSet) {
@@ -136,11 +150,11 @@ public abstract class RowMapperUtils {
             String jdbcType = column.jdbcType().trim().toLowerCase();
             if (StringUtils.isNotBlank(jdbcType))
             {
-                return  jdbcTypeCache.get(jdbcType);
+                return  JDBC_TYPE_CACHE.get(jdbcType);
             }
         }
 
-        return  requireTypeMethodNameCache.get(requireType);
+        return  REQUIRE_TYPE_METHOD_NAME_CACHE.get(requireType);
     }
 
     private static String getColumnName(Field field, Column column) {
@@ -149,19 +163,19 @@ public abstract class RowMapperUtils {
     }
 
     private static boolean required(Column column) {
-        return column != null ? column.required() : false;
+        return column != null && column.required();
     }
 
     private static List<Field> getFields(Class clazz) {
 
-        List<Field> fieldSet = (List) fieldCache.get(clazz);
+        List<Field> fieldSet =  FIELD_CACHE.get(clazz);
         if (fieldSet != null)
         {
             return fieldSet;
         }
 
         List<Field> fields = new ArrayList<>();
-        fieldCache.putIfAbsent(clazz, fields);
+        FIELD_CACHE.putIfAbsent(clazz, fields);
 
         ReflectionUtils.doWithFields(clazz, (field) -> {
             if (!Modifier.isStatic(field.getModifiers()))
@@ -176,24 +190,24 @@ public abstract class RowMapperUtils {
     }
 
     static {
-        requireTypeMethodNameCache.put(Long.TYPE, "getLong");
-        requireTypeMethodNameCache.put(Long.class, "getLong");
-        requireTypeMethodNameCache.put(Date.class, "getDate");
-        requireTypeMethodNameCache.put(Time.class, "getTime");
-        requireTypeMethodNameCache.put(Float.TYPE, "getFloat");
-        requireTypeMethodNameCache.put(Float.class, "getFloat");
-        requireTypeMethodNameCache.put(Double.TYPE, "getDate");
-        requireTypeMethodNameCache.put(String.class, "getString");
-        requireTypeMethodNameCache.put(Double.class, "getDate");
-        requireTypeMethodNameCache.put(Boolean.TYPE, "getBoolean");
-        requireTypeMethodNameCache.put(Boolean.class, "getBoolean");
-        requireTypeMethodNameCache.put(Integer.TYPE, "getInt");
-        requireTypeMethodNameCache.put(Integer.class, "getInt");
-        requireTypeMethodNameCache.put(Timestamp.class, "getTimestamp");
-        requireTypeMethodNameCache.put(BigDecimal.class, "getBigDecimal");
-        jdbcTypeCache.put("date", "getDate");
-        jdbcTypeCache.put("time", "getTime");
-        jdbcTypeCache.put("timestamp", "getTimestamp");
-        jdbcTypeCache.put("dateTime", "getTimestamp");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Long.TYPE, "getLong");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Long.class, "getLong");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Date.class, "getDate");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Time.class, "getTime");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Float.TYPE, "getFloat");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Float.class, "getFloat");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Double.TYPE, "getDate");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(String.class, "getString");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Double.class, "getDate");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Boolean.TYPE, "getBoolean");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Boolean.class, "getBoolean");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Integer.TYPE, "getInt");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Integer.class, "getInt");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(Timestamp.class, "getTimestamp");
+        REQUIRE_TYPE_METHOD_NAME_CACHE.put(BigDecimal.class, "getBigDecimal");
+        JDBC_TYPE_CACHE.put("date", "getDate");
+        JDBC_TYPE_CACHE.put("time", "getTime");
+        JDBC_TYPE_CACHE.put("timestamp", "getTimestamp");
+        JDBC_TYPE_CACHE.put("dateTime", "getTimestamp");
     }
 }
