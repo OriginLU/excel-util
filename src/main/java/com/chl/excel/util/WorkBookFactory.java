@@ -18,9 +18,7 @@ public abstract class WorkBookFactory {
             case VersionConstant.EXCEL_2003:
                 return new HSSFWorkbook();
             case VersionConstant.EXCEL_2007:
-                return new XSSFWorkbook();
             case VersionConstant.EXCEL_2007_ADV:
-                return new XSSFWorkbook();
                 default:
                     return new XSSFWorkbook();
         }

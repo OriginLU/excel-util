@@ -1,7 +1,7 @@
 package com.chl.excel.util;
 
-import com.chl.excel.configure.ExcelConfigureUtil;
-import com.chl.excel.entity.ExcelCol;
+import com.chl.excel.configure.ExcelConfigurationLoader;
+import com.chl.excel.entity.ExcelColumnConf;
 import com.chl.excel.exception.ExcelCreateException;
 import jxl.CellView;
 import jxl.SheetSettings;
@@ -30,8 +30,8 @@ public class JXLExcelUtils extends BaseUtils {
 
         try {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
-            ExcelCol[] conf = ExcelConfigureUtil.getExcelColConfiguration(type);
-            String titleName = ExcelConfigureUtil.getExcelTitleName(type);
+            ExcelColumnConf[] conf = ExcelConfigurationLoader.getExcelColConfiguration(type);
+            String titleName = ExcelConfigurationLoader.getExcelTitleName(type);
             WritableWorkbook workbook = Workbook.createWorkbook(os);
             WritableSheet sheet = createSheet(workbook,titleName,type,0);
             int rowIndex = createTitleRow(sheet, titleName, conf.length);
@@ -84,7 +84,7 @@ public class JXLExcelUtils extends BaseUtils {
      * @param rowNum
      * @return
      */
-    private static int createColumnTitleRow(WritableSheet sheet, ExcelCol[] configs, int rowNum) {
+    private static int createColumnTitleRow(WritableSheet sheet, ExcelColumnConf[] configs, int rowNum) {
 
         CellFormat cellFormat = getColumnTitleCellFormat();
         try {
@@ -110,7 +110,7 @@ public class JXLExcelUtils extends BaseUtils {
      * @param configs
      * @param rowNum
      */
-    private static void createContentRow(WritableSheet sheet, List list, ExcelCol[] configs, int rowNum) {
+    private static void createContentRow(WritableSheet sheet, List list, ExcelColumnConf[] configs, int rowNum) {
 
 
         int length = list.size();
@@ -121,7 +121,7 @@ public class JXLExcelUtils extends BaseUtils {
             for (int row = rowNum, data = 0; data < length; row++, data++) {
                 Object obj = list.get(data);
                 for (int col = 0; col < columnLength; col++) { //create cell for row
-                    ExcelCol config = configs[col];
+                    ExcelColumnConf config = configs[col];
                     Object result = getValue(obj,config);
                     String s = convertToString(result, config.getAnnotations());
                     Label label = new Label(col,row,s, cellFormat);

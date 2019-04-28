@@ -1,4 +1,4 @@
-package com.chl.excel.util;
+package com.chl.common.utils;
 
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;

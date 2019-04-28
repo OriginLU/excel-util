@@ -20,11 +20,11 @@ public class Main {
 
         SQLContext context = SQLContext.getInstance();
 
-        SQLConfig sqlConfig = context.getSQLConfig("com.chl.aviator.test.TestSQL.testDemo", TestSQL.class);
+        SQLConfig sqlConfig = context.getSQLConfig("com.chl.aviator.test.TestSQL.testDemo()", TestSQL.class);
 
         Map<String, Object> paraMap = new HashMap<>();
 
-        paraMap.put("startTime",new Date());
+//        paraMap.put("startTime",new Date());
 
         System.out.println(sqlConfig.getSQL(paraMap));
 

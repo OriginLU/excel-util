@@ -1,8 +1,8 @@
 package com.chl.excel.util;
 
-import com.chl.excel.annotation.ExcelColumn;
-import com.chl.excel.configure.ExcelConfigureUtil;
-import com.chl.excel.entity.ExcelCol;
+import com.chl.common.utils.Sequence;
+import com.chl.excel.configure.ExcelConfigurationLoader;
+import com.chl.excel.entity.ExcelColumnConf;
 import com.chl.excel.exception.ExcelCreateException;
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadFactory;
 
     private static Sequence sequence = new Sequence(2L, 2L);
 
-    protected static Object getValue(Object obj,ExcelCol config) {
+    protected static Object getValue(Object obj, ExcelColumnConf config) {
 
         try {
             return ReflectUtils.getMemberValue(obj, config.getMember());
@@ -42,9 +42,9 @@ import java.util.concurrent.ThreadFactory;
     }
 
 
-    protected static String getColumnName(ExcelCol conf) {
+    protected static String getColumnName(ExcelColumnConf conf) {
 
-        ExcelColumn excelColumn = (ExcelColumn) conf.getAnnotations().get(ExcelColumn.class);
+        com.chl.excel.annotation.ExcelColumn excelColumn = (com.chl.excel.annotation.ExcelColumn) conf.getAnnotations().get(com.chl.excel.annotation.ExcelColumn.class);
         String columnName = excelColumn.columnTitle();
         if (StringUtils.isBlank(columnName)) {
             return conf.getMember().getName();
@@ -75,7 +75,7 @@ import java.util.concurrent.ThreadFactory;
     protected static String getName(Class type){
 
         String temp = sequence.nextId().toString();
-        String name = ExcelConfigureUtil.getExcelTitleName(type);
+        String name = ExcelConfigurationLoader.getExcelTitleName(type);
         if (StringUtils.isBlank(name)){
             name = type.getSimpleName();
         }

@@ -1,8 +1,9 @@
 package com.chl.excel.util;
 
+import com.chl.common.utils.Sequence;
 import com.chl.excel.annotation.Excel;
-import com.chl.excel.configure.ExcelConfigureUtil;
-import com.chl.excel.entity.ExcelCol;
+import com.chl.excel.configure.ExcelConfigurationLoader;
+import com.chl.excel.entity.ExcelColumnConf;
 import com.chl.excel.exception.ExcelCreateException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
@@ -17,9 +18,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 /**
  * because of poi as the tool of excel for operation is not be safe in the multi thread,
@@ -42,9 +41,9 @@ public abstract class POIExcelUtils extends BaseUtils{
     public static Workbook createExcel(List list, Class type) {
 
         paramsCheck(list, type);
-        ExcelCol[] conf = ExcelConfigureUtil.getExcelColConfiguration(type);
-        String titleName = ExcelConfigureUtil.getExcelTitleName(type);
-        String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
+        ExcelColumnConf[] conf = getExcelColConfiguration(type);
+        String titleName = ExcelConfigurationLoader.getExcelTitleName(type);
+        String excelVersion = ExcelConfigurationLoader.getExcelVersion(type);
         Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
         Sheet sheet = createSheet(workbook, titleName,type);
         int rowIndex = createTitleRow(workbook, sheet, titleName, conf.length);
@@ -54,6 +53,22 @@ public abstract class POIExcelUtils extends BaseUtils{
     }
 
 
+    private static ConcurrentMap<Class, ExcelColumnConf[]> excelConf = new ConcurrentHashMap<>(16);
+
+
+    private static ExcelColumnConf[] getExcelColConfiguration(Class clazz) {
+
+        ExcelColumnConf[] conf = excelConf.get(clazz);
+        if (conf != null) {
+            return conf;
+        }
+        List members = ReflectUtils.getSpecifiedAnnotationFields(clazz, com.chl.excel.annotation.ExcelColumn.class);
+        members.addAll(ReflectUtils.getSpecifiedAnnotationMethods(clazz, com.chl.excel.annotation.ExcelColumn.class));
+        conf = ExcelConfigurationLoader.getExcelColumnConfiguration(members);
+        excelConf.putIfAbsent(clazz, conf);
+        return conf;
+
+    }
 
     private static void paramsCheck(List list, Class type) {
 
@@ -72,14 +87,8 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     /**
      * create cell data for per row
-     *
-     * @param workbook
-     * @param sheet
-     * @param list
-     * @param configs
-     * @param rowNum
      */
-    private static void createContentRow(Workbook workbook, Sheet sheet, List list, ExcelCol[] configs, int rowNum) {
+    private static void createContentRow(Workbook workbook, Sheet sheet, List list, ExcelColumnConf[] configs, int rowNum) {
 
 
         int length = list.size();
@@ -90,7 +99,7 @@ public abstract class POIExcelUtils extends BaseUtils{
             Row row = sheet.createRow(rowIndex);
             Object obj = list.get(data);
             for (int col = 0; col < columnLength; col++) { //create cell for row
-                ExcelCol config = configs[col];
+                ExcelColumnConf config = configs[col];
                 Object result = getValue(obj,config);
                 Cell cell = row.createCell(col);
                 cell.setCellStyle(cellStyle);
@@ -102,14 +111,8 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     /**
      * create column name for excel
-     *
-     * @param workbook
-     * @param sheet
-     * @param configs
-     * @param rowNum
-     * @return
      */
-    private static int createColumnNameRow(Workbook workbook, Sheet sheet, ExcelCol[] configs, int rowNum) {
+    private static int createColumnNameRow(Workbook workbook, Sheet sheet, ExcelColumnConf[] configs, int rowNum) {
 
         Row row = sheet.createRow(rowNum);
         CellStyle contentCellStyle = getColumnNameCellStyle(workbook);
@@ -126,12 +129,6 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     /**
      * create title
-     *
-     * @param book
-     * @param sheet
-     * @param titleName
-     * @param columnLength
-     * @return
      */
     private static int createTitleRow(Workbook book, Sheet sheet, String titleName, int columnLength) {
 
@@ -151,9 +148,6 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     /**
      * 设置标题样式
-     *
-     * @param wb
-     * @return
      */
     private static CellStyle getTitleCellStyle(Workbook wb) {
 
@@ -177,9 +171,6 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     /**
      * 设置单元格样式
-     *
-     * @param wb
-     * @return
      */
     private static CellStyle getColumnNameCellStyle(Workbook wb) {
 
@@ -218,9 +209,6 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     /**
      * the excel files is created by multi thread
-     * @param list
-     * @param type
-     * @return the created files path
      */
     public static String createExcelFiles(final List list, final Class type, Integer sheetCount) {
 
@@ -285,8 +273,8 @@ public abstract class POIExcelUtils extends BaseUtils{
     private static Workbook getWorkBook(List<Future<Workbook>> futures, Class type) {
 
         try {
-            String excelVersion = ExcelConfigureUtil.getExcelVersion(type);
-            String excelTitleName = ExcelConfigureUtil.getExcelTitleName(type);
+            String excelVersion = ExcelConfigurationLoader.getExcelVersion(type);
+            String excelTitleName = ExcelConfigurationLoader.getExcelTitleName(type);
             Workbook toWorkBook = WorkBookFactory.createWorkBook(excelVersion);
             for (int i = 0; i < futures.size(); i++) {
                 Workbook fromWorkBook = futures.get(i).get();
@@ -303,9 +291,6 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     /**
      * merge excel
-     * @param fromWorkBook
-     * @param toWorkBook
-     * @param sheetName
      */
     public static void mergeExcel(Workbook fromWorkBook, Workbook toWorkBook, String sheetName) {
 

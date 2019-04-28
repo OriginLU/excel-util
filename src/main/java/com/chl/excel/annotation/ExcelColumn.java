@@ -1,5 +1,7 @@
 package com.chl.excel.annotation;
 
+import com.chl.excel.formatter.DataFormatter;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -32,5 +34,11 @@ public @interface ExcelColumn {
     /**
      * Mark whether to generated the columns, support input a expression
      */
-    String required() default "true";
+    boolean required() default true;
+
+
+    /**
+     *
+     */
+    Class<? extends DataFormatter> formatter() default DataFormatter.class;
 }

@@ -1,7 +1,7 @@
 package com.chl.aviator.test;
 
 import com.chl.excel.annotation.ExcelColumn;
-import com.chl.excel.configure.ExcelConfigureUtil;
+import com.chl.excel.configure.ExcelConfigurationLoader;
 import com.chl.excel.exception.RepeatOrderException;
 import com.chl.excel.util.JXLExcelUtils;
 import com.chl.excel.util.POIExcelUtils;
@@ -73,7 +73,7 @@ public class TestDemo {
 
         System.out.println(Arrays.toString(ReflectUtils.getSpecifiedAnnotationFields(Demo.class, ExcelColumn.class).toArray()));
         System.out.println(Arrays.toString(ReflectUtils.getSpecifiedAnnotationMethods(Demo.class, ExcelColumn.class).toArray()));
-        System.out.println(Arrays.toString(ExcelConfigureUtil.getExcelColConfiguration(Demo.class)));
+        System.out.println(Arrays.toString(ExcelConfigurationLoader.getExcelColConfiguration(Demo.class)));
         HashSet<Object> objects = new HashSet<>();
         System.out.println(objects.add(1));
         System.out.println(objects.add(1));
