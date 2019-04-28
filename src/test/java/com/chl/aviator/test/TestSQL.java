@@ -5,6 +5,7 @@ import com.chl.jdbc.extension.annotation.Conditions;
 import com.chl.jdbc.extension.annotation.Select;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author lch
@@ -24,8 +25,12 @@ public interface TestSQL {
 
 
     @Select(baseSQL = "select * from dual",refCondition = "testid")
-    @Conditions({
-            @Condition(expression = "$(startTime)",condition = "startTime > 0")
-    })
-    List<String> testDemo();
+    List<String> testDemo(String name);
+
+
+    @Select(baseSQL = "select * from dual0",refCondition = "testid")
+    List<String> testDemo(List list);
+
+    @Select(baseSQL = "select * from dual1",refCondition = "testid")
+    List<String> testDemo(Map paraMap);
 }
