@@ -3,7 +3,6 @@ package com.chl.excel.util;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,7 +69,7 @@ public abstract class ReflectUtils {
     /**
      * 获取指定域
      */
-    public static Field getField(Class<?> clazz, String name) throws NoSuchFieldException {
+    private static Field getField(Class<?> clazz, String name) throws NoSuchFieldException {
 
         try
         {
@@ -109,6 +108,7 @@ public abstract class ReflectUtils {
 
 
 
+    @SuppressWarnings("unchecked")
     public static <T> T getFieldValue(Object obj, Field field){
 
         boolean accessible = field.isAccessible();
@@ -210,45 +210,5 @@ public abstract class ReflectUtils {
     }
 
 
-    public static Annotation[] getMemberAnnotations(Member member){
-
-        if (member instanceof Field){
-            return ((Field) member).getAnnotations();
-        }
-        else if (member instanceof Method){
-            return ((Method) member).getAnnotations();
-        }
-        else {
-            throw new IllegalArgumentException("input type has error, not support [" + member.getName() + "],check please");
-        }
-    }
-
-
-    public static <T extends Annotation> T getMemberAnnotation(Member member,Class<? extends Annotation> type){
-
-        if (member instanceof Field){
-            return (T) ((Field) member).getAnnotation(type);
-        }
-        else if (member instanceof Method){
-            return (T) ((Method) member).getAnnotation(type);
-        }
-        else {
-            throw new IllegalArgumentException("input type has error, not support [" + member.getName() + "],check please");
-        }
-    }
-
-
-    public static Object getMemberValue(Object src, Member member,Object ...args) throws InvocationTargetException {
-
-        if (member instanceof Field){
-            return getFieldValue(src, (Field) member);
-        }
-        else if (member instanceof Method){
-            return invokeMethod(src, (Method) member,args);
-        }
-        else {
-            throw new IllegalArgumentException("input type has error, not support [" + member.getName() + "],check please");
-        }
-    }
 
 }

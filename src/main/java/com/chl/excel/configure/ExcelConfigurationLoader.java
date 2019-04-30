@@ -6,7 +6,6 @@ import com.chl.excel.entity.ExcelColumnConfiguration;
 import com.chl.excel.exception.ExcelCreateException;
 import com.chl.excel.exception.RepeatOrderException;
 import com.chl.excel.formatter.DataFormatter;
-import com.chl.excel.util.ReflectUtils;
 import org.springframework.core.convert.TypeDescriptor;
 
 import java.lang.annotation.Annotation;
@@ -49,7 +48,7 @@ public abstract class ExcelConfigurationLoader {
         {
             Field member = members.get(col);
             ExcelColumnConfiguration columnConf = createExcelColumnConf(member);
-            ExcelColumn excelColumn = ReflectUtils.getMemberAnnotation(member, ExcelColumn.class);
+            ExcelColumn excelColumn = (ExcelColumn) columnConf.getAnnotations().get(ExcelColumn.class);
             Integer order = excelColumn.order();
 
             if (order > -1)
@@ -91,7 +90,7 @@ public abstract class ExcelConfigurationLoader {
     private static ExcelColumnConfiguration createExcelColumnConf(Field member) {
 
         ExcelColumnConfiguration column = new ExcelColumnConfiguration();
-        Annotation[] annotations = ReflectUtils.getMemberAnnotations(member);
+        Annotation[] annotations = member.getAnnotations();
         for (Annotation annotation : annotations)
         {
             if (annotation.annotationType() == ExcelColumn.class)
