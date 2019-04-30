@@ -1,47 +1,45 @@
 package com.chl.excel.util;
 
-import com.chl.common.utils.Sequence;
-import com.chl.excel.annotation.Excel;
+import com.chl.excel.annotation.ExcelColumn;
 import com.chl.excel.configure.ExcelConfigurationLoader;
-import com.chl.excel.entity.ExcelColumnConf;
+import com.chl.excel.converter.DefaultFormatterConverter;
+import com.chl.excel.entity.ExcelColumnConfiguration;
 import com.chl.excel.exception.ExcelCreateException;
+import com.chl.excel.formatter.DataFormatter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.core.convert.TypeDescriptor;
+import org.springframework.expression.TypeConverter;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
- * because of poi as the tool of excel for operation is not be safe in the multi thread,
- * you can overwrite the {@link Row#createCell(int)} and {@link Sheet#createRow(int)} method
- * and add lock for guarantee safe operation,but it performance bad than single thread
  *
  * @author LCH
  * @since 2018-06-13
  */
-public abstract class POIExcelUtils extends BaseUtils{
+public abstract class POIExcelUtils{
 
 
-    private final static Logger log = LoggerFactory.getLogger(POIExcelUtils.class);
+    private final static TypeConverter CONVERTER = new DefaultFormatterConverter();
 
-    private static int CELL_WIDTH = 200;
+    private final static TypeDescriptor TARGET_TYPE = TypeDescriptor.valueOf(String.class);
 
-    private static Sequence sequence = new Sequence(1l, 1l);
+    private static ConcurrentMap<Class, ExcelColumnConfiguration[]> excelConf = new ConcurrentHashMap<>(16);
 
+    private final static int CELL_WIDTH = 200;
 
-    public static Workbook createExcel(List list, Class type) {
+    public static Workbook createExcel(List<?> list, Class<?> type) {
 
-        paramsCheck(list, type);
-        ExcelColumnConf[] conf = getExcelColConfiguration(type);
+        ExcelColumnConfiguration[] conf = getExcelColConfiguration(type);
         String titleName = ExcelConfigurationLoader.getExcelTitleName(type);
         String excelVersion = ExcelConfigurationLoader.getExcelVersion(type);
         Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
@@ -53,29 +51,19 @@ public abstract class POIExcelUtils extends BaseUtils{
     }
 
 
-    private static ConcurrentMap<Class, ExcelColumnConf[]> excelConf = new ConcurrentHashMap<>(16);
+    private static ExcelColumnConfiguration[] getExcelColConfiguration(Class clazz) {
 
-
-    private static ExcelColumnConf[] getExcelColConfiguration(Class clazz) {
-
-        ExcelColumnConf[] conf = excelConf.get(clazz);
-        if (conf != null) {
-            return conf;
+        ExcelColumnConfiguration[] conf = excelConf.get(clazz);
+        if (conf == null)
+        {
+            List<Field> members = ReflectUtils.getSpecifiedAnnotationFields(clazz, ExcelColumn.class);
+            conf = ExcelConfigurationLoader.getExcelColumnConfiguration(members);
+            excelConf.putIfAbsent(clazz, conf);
         }
-        List members = ReflectUtils.getSpecifiedAnnotationFields(clazz, com.chl.excel.annotation.ExcelColumn.class);
-        members.addAll(ReflectUtils.getSpecifiedAnnotationMethods(clazz, com.chl.excel.annotation.ExcelColumn.class));
-        conf = ExcelConfigurationLoader.getExcelColumnConfiguration(members);
-        excelConf.putIfAbsent(clazz, conf);
         return conf;
 
     }
 
-    private static void paramsCheck(List list, Class type) {
-
-        if (type.isAnnotationPresent(Excel.class)) {
-
-        }
-    }
 
     private static Sheet createSheet(Workbook workbook, String titleName,Class type) {
 
@@ -88,35 +76,60 @@ public abstract class POIExcelUtils extends BaseUtils{
     /**
      * create cell data for per row
      */
-    private static void createContentRow(Workbook workbook, Sheet sheet, List list, ExcelColumnConf[] configs, int rowNum) {
+    private static void createContentRow(Workbook workbook, Sheet sheet, List list, ExcelColumnConfiguration[] configs, int rowNum) {
 
 
         int length = list.size();
         int columnLength = configs.length;
         CellStyle cellStyle = getCellStyle(workbook);
 
-        for (int rowIndex = rowNum, data = 0; data < length; rowIndex ++, data ++) {
+        for (int rowIndex = rowNum, data = 0; data < length; rowIndex ++, data ++)
+        {
             Row row = sheet.createRow(rowIndex);
             Object obj = list.get(data);
-            for (int col = 0; col < columnLength; col++) { //create cell for row
-                ExcelColumnConf config = configs[col];
+            for (int col = 0; col < columnLength; col++)
+            { //create cell for row
+                ExcelColumnConfiguration config = configs[col];
                 Object result = getValue(obj,config);
                 Cell cell = row.createCell(col);
                 cell.setCellStyle(cellStyle);
-                cell.setCellValue(convertToString(result, config.getAnnotations()));
+                cell.setCellValue(convertToString(obj,result, config));
             }
         }
 
     }
 
+
+    private static String convertToString(Object source,Object target,ExcelColumnConfiguration conf) {
+
+        if (target == null) {
+            return "";
+        }
+        DataFormatter formatter = conf.getFormatter();
+        if (formatter != null)
+        {
+            return formatter.format(source,target);
+        }
+
+        TypeDescriptor sourceType = conf.getTypeDescriptor();
+
+        if (CONVERTER.canConvert(sourceType,TARGET_TYPE))
+        {
+            return (String) CONVERTER.convertValue(target,sourceType,TARGET_TYPE);
+        }
+
+        throw new ExcelCreateException("can't convert " + target.getClass() + "to string");
+    }
+
     /**
      * create column name for excel
      */
-    private static int createColumnNameRow(Workbook workbook, Sheet sheet, ExcelColumnConf[] configs, int rowNum) {
+    private static int createColumnNameRow(Workbook workbook, Sheet sheet, ExcelColumnConfiguration[] configs, int rowNum) {
 
         Row row = sheet.createRow(rowNum);
         CellStyle contentCellStyle = getColumnNameCellStyle(workbook);
-        for (int col = 0; col < configs.length; col++) {
+        for (int col = 0; col < configs.length; col++)
+        {
             String columnName = getColumnName(configs[col]);
             Cell cell = row.createCell(col);
             cell.setCellStyle(contentCellStyle);
@@ -127,13 +140,39 @@ public abstract class POIExcelUtils extends BaseUtils{
         return rowNum;
     }
 
+
+    private static Object getValue(Object obj, ExcelColumnConfiguration config) {
+
+        try
+        {
+            return ReflectUtils.getFieldValue(obj, config.getField());
+        }
+        catch (Exception e)
+        {
+            throw new ExcelCreateException("create excel error ", e);
+        }
+    }
+
+
+    private static String getColumnName(ExcelColumnConfiguration conf) {
+
+        ExcelColumn excelColumn = (ExcelColumn) conf.getAnnotations().get(ExcelColumn.class);
+        String columnName = excelColumn.columnTitle();
+        if (StringUtils.isBlank(columnName))
+        {
+            return conf.getField().getName();
+        }
+        return columnName;
+    }
+
     /**
      * create title
      */
     private static int createTitleRow(Workbook book, Sheet sheet, String titleName, int columnLength) {
 
 
-        if (StringUtils.isNotBlank(titleName)) {
+        if (StringUtils.isNotBlank(titleName))
+        {
             Row titleRow = sheet.createRow(0);
             Cell cell = titleRow.createCell(0);
             cell.setCellValue(titleName);
@@ -208,99 +247,21 @@ public abstract class POIExcelUtils extends BaseUtils{
     }
 
     /**
-     * the excel files is created by multi thread
-     */
-    public static String createExcelFiles(final List list, final Class type, Integer sheetCount) {
-
-        ExecutorService executorService = ExecutorFactory.getInstance();
-        String name = getName(type);
-        int cycleCount = getCycleCount(list.size(),sheetCount);
-        String sysPath = getSystemPath(name);
-        String prefix = sysPath + name + "_";
-        for (int i = 0; i < cycleCount; i++) {
-            final String path = prefix + i + ".xls";
-            final List nextList = getNextList(list,i,sheetCount);
-            executorService.execute(createRunnable(nextList, type,path));
-        }
-        executorService.shutdown();
-        return sysPath;
-    }
-
-
-
-    private static String getSystemPath(String temp) {
-
-        String path = "d:/excel/";
-//        String path = System.getProperty("java.io.tmpdir");
-        path = (path.lastIndexOf('/') == path.length() - 1) ? (path + temp) : (path + File.separator + temp);
-        File file = new File(path);
-        if (!file.exists()){
-            file.mkdirs();
-        }
-        return file.getAbsolutePath() + File.separator;
-    }
-
-    private static Runnable createRunnable(final List list, final Class type,final String path){
-
-        return new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Workbook excel = createExcel(list, type);
-                    FileOutputStream outputStream = new FileOutputStream(path);
-                    excel.write(outputStream);
-                    outputStream.flush();
-                    outputStream.close();
-                }catch (Exception e){
-                    throw new ExcelCreateException("create excel error : ", e);
-                }
-            }
-        };
-    }
-
-    private static Callable<Workbook> createCallable(final List list, final Class type) {
-
-        return new Callable<Workbook>() {
-            @Override
-            public Workbook call() {
-                return createExcel(list, type);
-            }
-        };
-    }
-
-
-
-    private static Workbook getWorkBook(List<Future<Workbook>> futures, Class type) {
-
-        try {
-            String excelVersion = ExcelConfigurationLoader.getExcelVersion(type);
-            String excelTitleName = ExcelConfigurationLoader.getExcelTitleName(type);
-            Workbook toWorkBook = WorkBookFactory.createWorkBook(excelVersion);
-            for (int i = 0; i < futures.size(); i++) {
-                Workbook fromWorkBook = futures.get(i).get();
-                mergeExcel(fromWorkBook, toWorkBook, excelTitleName + "_" + i);
-            }
-            return toWorkBook;
-        } catch (Exception e) {
-            log.error("create excel error : ", e);
-            throw new ExcelCreateException("create excel error : ", e);
-        } finally {
-            ExecutorFactory.close();
-        }
-    }
-
-    /**
      * merge excel
      */
     public static void mergeExcel(Workbook fromWorkBook, Workbook toWorkBook, String sheetName) {
 
-        try {
-            for (int i = 0; i < fromWorkBook.getNumberOfSheets(); i++) {
+        try
+        {
+            for (int i = 0; i < fromWorkBook.getNumberOfSheets(); i++)
+            {
                 Sheet oldSheet = fromWorkBook.getSheetAt(i);
                 Sheet newSheet = toWorkBook.createSheet(sheetName);
                 copySheet(toWorkBook, oldSheet, newSheet);
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             throw new ExcelCreateException("create excel error", e);
         }
     }
@@ -324,47 +285,67 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     private static void mergeSheetAllRegion(Sheet fromSheet, Sheet toSheet) {//合并单元格
         int num = fromSheet.getNumMergedRegions();
-        CellRangeAddress cellR = null;
-        for (int i = 0; i < num; i++) {
-            cellR = fromSheet.getMergedRegion(i);
+        for (int i = 0; i < num; i++)
+        {
+            CellRangeAddress cellR = fromSheet.getMergedRegion(i);
             toSheet.addMergedRegion(cellR);
         }
     }
 
     private static void copyCell(Workbook wb, Cell fromCell, Cell toCell) {
+
         CellStyle newStyle = wb.createCellStyle();
+
         copyCellStyle(fromCell.getCellStyle(), newStyle);
+
         toCell.setCellStyle(newStyle);
-        if (fromCell.getCellComment() != null) {
+        if (fromCell.getCellComment() != null)
+        {
             toCell.setCellComment(fromCell.getCellComment());
         }
         int fromCellType = fromCell.getCellType();
         toCell.setCellType(fromCellType);
-        if (fromCellType == XSSFCell.CELL_TYPE_NUMERIC) {
-            if (XSSFDateUtil.isCellDateFormatted(fromCell)) {
+        if (fromCellType == XSSFCell.CELL_TYPE_NUMERIC)
+        {
+            if (XSSFDateUtil.isCellDateFormatted(fromCell))
+            {
                 toCell.setCellValue(fromCell.getDateCellValue());
-            } else {
+            }
+            else
+            {
                 toCell.setCellValue(fromCell.getNumericCellValue());
             }
-        } else if (fromCellType == XSSFCell.CELL_TYPE_STRING) {
+        }
+        else if (fromCellType == XSSFCell.CELL_TYPE_STRING)
+        {
             toCell.setCellValue(fromCell.getRichStringCellValue());
-        } else if (fromCellType == XSSFCell.CELL_TYPE_BLANK) {
-
-        } else if (fromCellType == XSSFCell.CELL_TYPE_BOOLEAN) {
+        }
+        else if (fromCellType == XSSFCell.CELL_TYPE_BOOLEAN)
+        {
             toCell.setCellValue(fromCell.getBooleanCellValue());
-        } else if (fromCellType == XSSFCell.CELL_TYPE_ERROR) {
+        }
+        else if (fromCellType == XSSFCell.CELL_TYPE_ERROR)
+        {
             toCell.setCellErrorValue(fromCell.getErrorCellValue());
-        } else if (fromCellType == XSSFCell.CELL_TYPE_FORMULA) {
+        }
+        else if (fromCellType == XSSFCell.CELL_TYPE_FORMULA)
+        {
             toCell.setCellFormula(fromCell.getCellFormula());
-        } else {
+        }
+        else
+        {
+            toCell.setCellValue(fromCell.getStringCellValue());
         }
 
     }
 
 
     private static void copyRow(Workbook wb, Row oldRow, Row toRow) {
+
         toRow.setHeight(oldRow.getHeight());
-        for (Iterator cellIt = oldRow.cellIterator(); cellIt.hasNext(); ) {
+
+        for (Iterator cellIt = oldRow.cellIterator(); cellIt.hasNext(); )
+        {
             Cell tmpCell = (XSSFCell) cellIt.next();
             Cell newCell = toRow.createCell(tmpCell.getColumnIndex());
             copyCell(wb, tmpCell, newCell);
@@ -373,7 +354,7 @@ public abstract class POIExcelUtils extends BaseUtils{
 
     private static void copyCellStyle(CellStyle fromStyle, CellStyle toStyle) {
 
-        toStyle.cloneStyleFrom(fromStyle);//此一行代码搞定
+        toStyle.cloneStyleFrom(fromStyle);
     }
 
 

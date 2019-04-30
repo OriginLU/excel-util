@@ -2,14 +2,15 @@ package com.chl.excel.configure;
 
 import com.chl.excel.annotation.Excel;
 import com.chl.excel.annotation.ExcelColumn;
-import com.chl.excel.entity.ExcelColumnConf;
+import com.chl.excel.entity.ExcelColumnConfiguration;
 import com.chl.excel.exception.ExcelCreateException;
 import com.chl.excel.exception.RepeatOrderException;
 import com.chl.excel.formatter.DataFormatter;
 import com.chl.excel.util.ReflectUtils;
+import org.springframework.core.convert.TypeDescriptor;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Member;
+import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,18 +37,18 @@ public abstract class ExcelConfigurationLoader {
         return annotation.version();
     }
 
-    public static ExcelColumnConf[] getExcelColumnConfiguration(List<Member> members){
+    public static ExcelColumnConfiguration[] getExcelColumnConfiguration(List<Field> members){
 
 
         int length = members.size();
         Set<Integer> orders = new HashSet<>();
-        ExcelColumnConf[] conf = new ExcelColumnConf[length];
+        ExcelColumnConfiguration[] conf = new ExcelColumnConfiguration[length];
         LinkedList<Integer> index = new LinkedList<>();
 
         for (int col = 0; col < length; col++)
         {
-            Member member = members.get(col);
-            ExcelColumnConf columnConf = createExcelColumnConf(member);
+            Field member = members.get(col);
+            ExcelColumnConfiguration columnConf = createExcelColumnConf(member);
             ExcelColumn excelColumn = ReflectUtils.getMemberAnnotation(member, ExcelColumn.class);
             Integer order = excelColumn.order();
 
@@ -58,7 +59,7 @@ public abstract class ExcelConfigurationLoader {
                     String memberName = member.getDeclaringClass().getName();
                     throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order +
                             " in the member [" + memberName + "." + member.getName() + "]," + "which same as the" +
-                            " member [" + memberName + "." + conf[order].getMember().getName() + "]");
+                            " member [" + memberName + "." + conf[order].getField().getName() + "]");
                 }
             }
             else
@@ -69,7 +70,7 @@ public abstract class ExcelConfigurationLoader {
             if (conf[order] != null)
             {
                 Integer tempIndex = (index.size() > 0) ? index.pop() : getFreeIndex(col, conf);
-                ExcelColumnConf temp = conf[order];
+                ExcelColumnConfiguration temp = conf[order];
                 conf[order] = columnConf;
                 conf[tempIndex] = temp;
             }
@@ -87,9 +88,9 @@ public abstract class ExcelConfigurationLoader {
     }
 
 
-    private static ExcelColumnConf createExcelColumnConf(Member member) {
+    private static ExcelColumnConfiguration createExcelColumnConf(Field member) {
 
-        ExcelColumnConf column = new ExcelColumnConf();
+        ExcelColumnConfiguration column = new ExcelColumnConfiguration();
         Annotation[] annotations = ReflectUtils.getMemberAnnotations(member);
         for (Annotation annotation : annotations)
         {
@@ -100,8 +101,14 @@ public abstract class ExcelConfigurationLoader {
             }
             column.addAnnotation(annotation);
         }
-        column.setMember(member);
+        column.setTypeDescriptor(createTypeDescriptor(member));
+        column.setField(member);
         return column;
+    }
+
+    private static TypeDescriptor createTypeDescriptor(Field field) {
+
+        return new TypeDescriptor(field);
     }
 
     private static DataFormatter createDataFormatter(Class<? extends DataFormatter> formatter) {
@@ -121,7 +128,7 @@ public abstract class ExcelConfigurationLoader {
     }
 
 
-    private static Integer getFreeIndex(int index, ExcelColumnConf[] conf) {
+    private static Integer getFreeIndex(int index, ExcelColumnConfiguration[] conf) {
 
         if (index < conf.length - 1 && conf[index] != null)
         {

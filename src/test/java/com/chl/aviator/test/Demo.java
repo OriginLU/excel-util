@@ -10,11 +10,14 @@ import com.chl.excel.annotation.ExcelColumn;
 @Excel("测试")
 public class Demo extends SuperDemo{
 
+
+
     @ExcelColumn(columnTitle = "姓名",order = 1)
     String name;
 
     @ExcelColumn(columnTitle = "编号",order = 2)
     String id;
+
 
     public String getName() {
         return name;

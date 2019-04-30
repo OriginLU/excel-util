@@ -2,8 +2,8 @@ package com.chl.excel.converter;
 
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
-import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.expression.TypeConverter;
+import org.springframework.format.support.DefaultFormattingConversionService;
 
 /**
  * @author lch
@@ -28,7 +28,7 @@ public class DefaultFormatterConverter implements TypeConverter {
             {
                 if (null == defaultConversionService)
                 {
-                    defaultConversionService = new DefaultConversionService();
+                    defaultConversionService = new DefaultFormattingConversionService();
                 }
             }
         }

@@ -1,9 +1,10 @@
 package com.chl.excel.entity;
 
 import com.chl.excel.formatter.DataFormatter;
+import org.springframework.core.convert.TypeDescriptor;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Member;
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,13 +12,24 @@ import java.util.Map;
  * @author lch
  * @since 2018-08-16
  */
-public class ExcelColumnConf {
+public class ExcelColumnConfiguration {
+
+
+    private TypeDescriptor typeDescriptor;
+
+    private DataFormatter formatter;
 
     private Map<Class,Annotation> annotations;
 
-    private Member member;
+    private Field field;
 
-    private DataFormatter formatter;
+    public TypeDescriptor getTypeDescriptor() {
+        return typeDescriptor;
+    }
+
+    public void setTypeDescriptor(TypeDescriptor typeDescriptor) {
+        this.typeDescriptor = typeDescriptor;
+    }
 
 
     public DataFormatter getFormatter() {
@@ -32,16 +44,12 @@ public class ExcelColumnConf {
         return annotations;
     }
 
-    public void setAnnotations(Map<Class, Annotation> annotations) {
-        this.annotations = annotations;
+    public Field getField() {
+        return field;
     }
 
-    public Member  getMember() {
-        return member;
-    }
-
-    public void setMember(Member member) {
-        this.member = member;
+    public void setField(Field field) {
+        this.field = field;
     }
 
     public void addAnnotation(Annotation ans){
