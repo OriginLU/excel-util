@@ -32,12 +32,6 @@ public @interface ExcelColumn {
     int order() default -1;
 
     /**
-     * Mark whether to generated the columns, support input a expression
-     */
-    boolean required() default true;
-
-
-    /**
      *
      */
     Class<? extends DataFormatter> formatter() default DataFormatter.class;
