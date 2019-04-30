@@ -76,7 +76,7 @@ public abstract class POIExcelUtils{
     /**
      * create cell data for per row
      */
-    private static void createContentRow(Workbook workbook, Sheet sheet, List list, ExcelColumnConfiguration[] configs, int rowNum) {
+    private static void createContentRow(Workbook workbook, Sheet sheet, List<?> list, ExcelColumnConfiguration[] configs, int rowNum) {
 
 
         int length = list.size();
