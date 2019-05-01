@@ -26,16 +26,16 @@ import java.util.concurrent.ConcurrentMap;
  * @author LCH
  * @since 2018-06-13
  */
-public abstract class POIExcelUtils{
+public abstract class POIUtils {
 
+
+    private final static int CELL_WIDTH = 20;
 
     private final static TypeConverter CONVERTER = new DefaultFormatterConverter();
 
     private final static TypeDescriptor TARGET_TYPE = TypeDescriptor.valueOf(String.class);
 
     private static ConcurrentMap<Class, ExcelColumnConfiguration[]> excelConf = new ConcurrentHashMap<>(16);
-
-    private final static int CELL_WIDTH = 200;
 
     public static Workbook createExcel(List<?> list, Class<?> type) {
 
@@ -157,7 +157,7 @@ public abstract class POIExcelUtils{
     private static String getColumnName(ExcelColumnConfiguration conf) {
 
         ExcelColumn excelColumn = (ExcelColumn) conf.getAnnotations().get(ExcelColumn.class);
-        String columnName = excelColumn.columnTitle();
+        String columnName = excelColumn.columnName();
         if (StringUtils.isBlank(columnName))
         {
             return conf.getField().getName();

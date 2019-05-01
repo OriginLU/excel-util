@@ -1,9 +1,7 @@
 package com.chl.aviator.test;
 
-import com.chl.excel.annotation.ExcelColumn;
 import com.chl.excel.exception.RepeatOrderException;
-import com.chl.excel.util.POIExcelUtils;
-import com.chl.excel.util.ReflectUtils;
+import com.chl.excel.util.POIUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Test;
 
@@ -30,7 +28,7 @@ public class TestDemo {
             arrayList.add(demo);
         }
         long currentTimeMillis = System.currentTimeMillis();
-        Workbook excel = POIExcelUtils.createExcel(arrayList, Demo.class);
+        Workbook excel = POIUtils.createExcel(arrayList, Demo.class);
         try {
             FileOutputStream outputStream = new FileOutputStream("D:/test.xls");
             excel.write(outputStream);

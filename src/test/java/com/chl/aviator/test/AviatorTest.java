@@ -1,19 +1,21 @@
 package com.chl.aviator.test;
 
+import com.chl.excel.util.POIUtils;
 import com.chl.excel.util.ReflectUtils;
 import com.chl.jdbc.extension.expression.function.BlankFunction;
 import com.chl.jdbc.extension.expression.function.NullFunction;
 import com.googlecode.aviator.AviatorEvaluator;
 import com.googlecode.aviator.Expression;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -110,6 +112,50 @@ public class AviatorTest {
         System.out.println("yield before ....");
         Thread.yield();
         System.out.println("yield after .....");
+    }
+
+
+    @Test
+    public void poiTest(){
+
+
+        List<Demo> list = new ArrayList<>();
+
+
+        Random random = new Random();
+
+        for (int i = 0; i < 10000; i++) {
+
+            Demo demo = new Demo();
+
+            demo.setName("Test_" + i);
+            demo.setCreateTime(new Date());
+            demo.setCode("12346" + random.nextInt(10000));
+
+            demo.setId(random.nextDouble() + "");
+            demo.setStatus("1");
+            demo.setTime(System.currentTimeMillis()+ "");
+
+            list.add(demo);
+        }
+
+
+
+        try {
+            long currentTimeMillis = System.currentTimeMillis();
+
+            Workbook excel = POIUtils.createExcel(list, Demo.class);
+            FileOutputStream outputStream = new FileOutputStream(new File("D:\\Projects\\excel-util\\target\\test.xls"));
+
+            excel.write(outputStream);
+
+            outputStream.flush();
+            outputStream.close();
+            System.out.println(System.currentTimeMillis() - currentTimeMillis);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
 }
