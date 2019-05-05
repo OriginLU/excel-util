@@ -5,6 +5,7 @@ import org.springframework.core.convert.TypeDescriptor;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,6 +23,8 @@ public class ExcelColumnConfiguration {
     private Map<Class,Annotation> annotations;
 
     private Field field;
+
+    private Method method;
 
     public TypeDescriptor getTypeDescriptor() {
         return typeDescriptor;
@@ -50,6 +53,15 @@ public class ExcelColumnConfiguration {
 
     public void setField(Field field) {
         this.field = field;
+    }
+
+
+    public Method getMethod() {
+        return method;
+    }
+
+    public void setMethod(Method method) {
+        this.method = method;
     }
 
     public void addAnnotation(Annotation ans){

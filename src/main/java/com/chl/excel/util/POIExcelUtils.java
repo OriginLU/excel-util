@@ -15,11 +15,8 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.TypeConverter;
 
-import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  *
@@ -28,18 +25,15 @@ import java.util.concurrent.ConcurrentMap;
  */
 public abstract class POIExcelUtils{
 
+    private final static int CELL_WIDTH = 20;
 
     private final static TypeConverter CONVERTER = new DefaultFormatterConverter();
 
     private final static TypeDescriptor TARGET_TYPE = TypeDescriptor.valueOf(String.class);
 
-    private static ConcurrentMap<Class, ExcelColumnConfiguration[]> excelConf = new ConcurrentHashMap<>(16);
-
-    private final static int CELL_WIDTH = 200;
-
     public static Workbook createExcel(List<?> list, Class<?> type) {
 
-        ExcelColumnConfiguration[] conf = getExcelColConfiguration(type);
+        ExcelColumnConfiguration[] conf = ExcelConfigurationLoader.getConfiguration(type);
         String titleName = ExcelConfigurationLoader.getExcelTitleName(type);
         String excelVersion = ExcelConfigurationLoader.getExcelVersion(type);
         Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
@@ -48,20 +42,6 @@ public abstract class POIExcelUtils{
         rowIndex = createColumnNameRow(workbook, sheet, conf, rowIndex);
         createContentRow(workbook, sheet, list, conf, rowIndex);
         return workbook;
-    }
-
-
-    private static ExcelColumnConfiguration[] getExcelColConfiguration(Class clazz) {
-
-        ExcelColumnConfiguration[] conf = excelConf.get(clazz);
-        if (conf == null)
-        {
-            List<Field> members = ReflectUtils.getSpecifiedAnnotationFields(clazz, ExcelColumn.class);
-            conf = ExcelConfigurationLoader.getExcelColumnConfiguration(members);
-            excelConf.putIfAbsent(clazz, conf);
-        }
-        return conf;
-
     }
 
 
