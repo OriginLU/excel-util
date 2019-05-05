@@ -14,6 +14,8 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.TypeConverter;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
 
@@ -120,11 +122,24 @@ public abstract class POIUtils {
     }
 
 
-    private static Object getValue(Object obj, ExcelColumnConfiguration config) {
+    private static Object getValue(Object obj, ExcelColumnConfiguration conf) {
 
         try
         {
-            return ReflectUtils.getFieldValue(obj, config.getField());
+            Field field = conf.getField();
+
+            if (field != null)
+            {
+                return ReflectUtils.getFieldValue(obj, field);
+            }
+
+            Method method = conf.getMethod();
+            if (method != null)
+            {
+                return ReflectUtils.invokeMethod(obj,method);
+            }
+
+            return null;
         }
         catch (Exception e)
         {

@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
 public @interface ExcelColumn {
 
     /**
-     *  generate the column name
+     *  specified the column name for excel
      */
     String columnName() default "";
 

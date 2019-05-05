@@ -120,7 +120,7 @@ public abstract class AbstractConfigurationLoader<T extends Member> implements C
 
     protected String getColumnName(T member,ExcelColumn excelColumn){
 
-        String columnName = excelColumn.columnTitle();
+        String columnName = excelColumn.columnName();
 
         if (StringUtils.isBlank(columnName))
         {
