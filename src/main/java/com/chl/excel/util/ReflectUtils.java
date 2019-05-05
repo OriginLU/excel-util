@@ -18,12 +18,16 @@ public abstract class ReflectUtils {
     public static void setFieldValue(Field field, Object obj, Object value) {
 
         boolean accessible = field.isAccessible();
-        if (!accessible) {
+        if (!accessible)
+        {
             field.setAccessible(true);
         }
-        try {
+        try
+        {
             field.set(obj, value);
-        } catch (IllegalAccessException e) {
+        }
+        catch (IllegalAccessException e)
+        {
             //ignore this exception
         }
     }
@@ -54,12 +58,16 @@ public abstract class ReflectUtils {
     public static Object invokeMethod(Object target, Method method, Object... args) throws InvocationTargetException {
 
         boolean accessible = method.isAccessible();
-        if (!accessible) {
+        if (!accessible)
+        {
             method.setAccessible(true);
         }
-        try {
+        try
+        {
             return method.invoke(target, args);
-        } catch (IllegalAccessException e) {
+        }
+        catch (IllegalAccessException e)
+        {
             //ignore this exception
         }
         return null;
@@ -133,10 +141,12 @@ public abstract class ReflectUtils {
 
         List<Field> fields;
         Class<?> superclass = clazz.getSuperclass();
-        if (superclass != null && Object.class != superclass) {
+        if (superclass != null && Object.class != superclass)
+        {
             fields = getFields(superclass);
         }
-        else {
+        else
+        {
             fields = new ArrayList<>();
         }
         fields.addAll(Arrays.asList(clazz.getDeclaredFields()));
@@ -154,7 +164,8 @@ public abstract class ReflectUtils {
         {
             methods = getMethods(superclass);
         }
-        else {
+        else
+        {
             methods = new ArrayList<>();
         }
         methods.addAll(Arrays.asList(clazz.getDeclaredMethods()));
@@ -176,6 +187,7 @@ public abstract class ReflectUtils {
         {
             list = new ArrayList<>();
         }
+
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields)
         {
@@ -194,14 +206,20 @@ public abstract class ReflectUtils {
 
         List<Method> list;
         Class superclass = clazz.getSuperclass();
-        if (superclass != null && Object.class != superclass) {
+        if (superclass != null && Object.class != superclass)
+        {
             list = getSpecifiedAnnotationMethods(superclass, annotationClass);
-        }else {
+        }
+        else
+        {
             list = new ArrayList<>();
         }
+
         Method[] methods = clazz.getDeclaredMethods();
-        for (Method method : methods) {
-            if (method.isAnnotationPresent(annotationClass)) {
+        for (Method method : methods)
+        {
+            if (method.isAnnotationPresent(annotationClass))
+            {
                 list.add(method);
             }
         }

@@ -55,6 +55,26 @@ public abstract class POIUtils {
     }
 
     /**
+     * create column name for excel
+     */
+    private static int createColumnNameRow(Workbook workbook, Sheet sheet, ExcelColumnConfiguration[] configs, int rowNum) {
+
+        Row row = sheet.createRow(rowNum);
+        CellStyle contentCellStyle = getColumnNameCellStyle(workbook);
+        for (int col = 0; col < configs.length; col++)
+        {
+            String columnName = configs[col].getColumnName();
+            Cell cell = row.createCell(col);
+            cell.setCellStyle(contentCellStyle);
+            cell.setCellValue(columnName);
+        }
+        rowNum += 1;
+        sheet.createFreezePane(0,rowNum,0,rowNum);
+        return rowNum;
+    }
+
+
+    /**
      * create cell data for per row
      */
     private static void createContentRow(Workbook workbook, Sheet sheet, List<?> list, ExcelColumnConfiguration[] configs, int rowNum) {
@@ -83,9 +103,11 @@ public abstract class POIUtils {
 
     private static String convertToString(Object source,Object target,ExcelColumnConfiguration conf) {
 
-        if (target == null) {
-            return "";
+        if (target == null)
+        {
+            return conf.getDefaultValue();
         }
+
         DataFormatter formatter = conf.getFormatter();
         if (formatter != null)
         {
@@ -93,32 +115,12 @@ public abstract class POIUtils {
         }
 
         TypeDescriptor sourceType = conf.getTypeDescriptor();
-
         if (CONVERTER.canConvert(sourceType,TARGET_TYPE))
         {
             return (String) CONVERTER.convertValue(target,sourceType,TARGET_TYPE);
         }
 
         throw new ExcelCreateException("can't convert " + target.getClass() + "to string");
-    }
-
-    /**
-     * create column name for excel
-     */
-    private static int createColumnNameRow(Workbook workbook, Sheet sheet, ExcelColumnConfiguration[] configs, int rowNum) {
-
-        Row row = sheet.createRow(rowNum);
-        CellStyle contentCellStyle = getColumnNameCellStyle(workbook);
-        for (int col = 0; col < configs.length; col++)
-        {
-            String columnName = configs[col].getColumnName();
-            Cell cell = row.createCell(col);
-            cell.setCellStyle(contentCellStyle);
-            cell.setCellValue(columnName);
-        }
-        rowNum += 1;
-        sheet.createFreezePane(0,rowNum,0,rowNum);
-        return rowNum;
     }
 
 

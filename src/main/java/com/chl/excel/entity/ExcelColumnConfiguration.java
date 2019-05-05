@@ -19,6 +19,8 @@ public class ExcelColumnConfiguration {
 
     private String columnName;
 
+    private String defaultValue;
+
     private Field field;
 
     private Method method;
@@ -36,6 +38,14 @@ public class ExcelColumnConfiguration {
 
     public void setColumnName(String columnName) {
         this.columnName = columnName;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
     }
 
     public TypeDescriptor getTypeDescriptor() {

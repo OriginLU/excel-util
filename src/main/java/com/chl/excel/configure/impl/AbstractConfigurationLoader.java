@@ -101,19 +101,20 @@ public abstract class AbstractConfigurationLoader<T extends Member> implements C
 
         ExcelColumnConfiguration column = new ExcelColumnConfiguration();
 
+        setMember(column,member);
         Annotation[] annotations = getAnnotations(member);
         for (Annotation annotation : annotations)
         {
             if (annotation.annotationType() == ExcelColumn.class)
             {
                 ExcelColumn col = (ExcelColumn) annotation;
+                column.setDefaultValue(col.value());
                 column.setColumnName(getColumnName(member,col));
                 column.setFormatter(createDataFormatter(col.formatter()));
             }
             column.addAnnotation(annotation);
         }
         column.setTypeDescriptor(createTypeDescriptor(member));
-        setMember(column,member);
 
         return column;
     }

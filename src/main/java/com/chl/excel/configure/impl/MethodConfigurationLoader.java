@@ -26,7 +26,6 @@ public class MethodConfigurationLoader extends AbstractConfigurationLoader<Metho
 
         Property property = new Property(returnType, member, null);
 
-
         return new TypeDescriptor(property);
     }
 
