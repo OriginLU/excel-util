@@ -108,8 +108,7 @@ public abstract class ReflectUtils {
 
 
 
-    @SuppressWarnings("unchecked")
-    public static <T> T getFieldValue(Object obj, Field field){
+    public static Object getFieldValue(Object obj, Field field){
 
         boolean accessible = field.isAccessible();
         if (!accessible)
@@ -118,7 +117,7 @@ public abstract class ReflectUtils {
         }
         try
         {
-            return (T) field.get(obj);
+            return field.get(obj);
         }
         catch (IllegalAccessException e)
         {

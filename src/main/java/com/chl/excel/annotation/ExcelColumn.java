@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
  * @author LCH
  * @since 2018-06-13
  */
-@Target({ElementType.FIELD})
+@Target({ElementType.FIELD,ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ExcelColumn {
 

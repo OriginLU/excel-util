@@ -1,6 +1,5 @@
 package com.chl.excel.util;
 
-import com.chl.excel.annotation.ExcelColumn;
 import com.chl.excel.configure.ExcelConfigurationLoader;
 import com.chl.excel.converter.DefaultFormatterConverter;
 import com.chl.excel.entity.ExcelColumnConfiguration;
@@ -15,11 +14,8 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.TypeConverter;
 
-import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  *
@@ -28,40 +24,23 @@ import java.util.concurrent.ConcurrentMap;
  */
 public abstract class POIUtils {
 
-
     private final static int CELL_WIDTH = 20;
 
     private final static TypeConverter CONVERTER = new DefaultFormatterConverter();
 
     private final static TypeDescriptor TARGET_TYPE = TypeDescriptor.valueOf(String.class);
 
-    private static ConcurrentMap<Class, ExcelColumnConfiguration[]> excelConf = new ConcurrentHashMap<>(16);
-
     public static Workbook createExcel(List<?> list, Class<?> type) {
 
-        ExcelColumnConfiguration[] conf = getExcelColConfiguration(type);
         String titleName = ExcelConfigurationLoader.getExcelTitleName(type);
         String excelVersion = ExcelConfigurationLoader.getExcelVersion(type);
+        ExcelColumnConfiguration[] conf = ExcelConfigurationLoader.getConfiguration(type);
         Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
         Sheet sheet = createSheet(workbook, titleName,type);
         int rowIndex = createTitleRow(workbook, sheet, titleName, conf.length);
         rowIndex = createColumnNameRow(workbook, sheet, conf, rowIndex);
         createContentRow(workbook, sheet, list, conf, rowIndex);
         return workbook;
-    }
-
-
-    private static ExcelColumnConfiguration[] getExcelColConfiguration(Class clazz) {
-
-        ExcelColumnConfiguration[] conf = excelConf.get(clazz);
-        if (conf == null)
-        {
-            List<Field> members = ReflectUtils.getSpecifiedAnnotationFields(clazz, ExcelColumn.class);
-            conf = ExcelConfigurationLoader.getExcelColumnConfiguration(members);
-            excelConf.putIfAbsent(clazz, conf);
-        }
-        return conf;
-
     }
 
 
@@ -130,7 +109,7 @@ public abstract class POIUtils {
         CellStyle contentCellStyle = getColumnNameCellStyle(workbook);
         for (int col = 0; col < configs.length; col++)
         {
-            String columnName = getColumnName(configs[col]);
+            String columnName = configs[col].getColumnName();
             Cell cell = row.createCell(col);
             cell.setCellStyle(contentCellStyle);
             cell.setCellValue(columnName);
@@ -151,18 +130,6 @@ public abstract class POIUtils {
         {
             throw new ExcelCreateException("create excel error ", e);
         }
-    }
-
-
-    private static String getColumnName(ExcelColumnConfiguration conf) {
-
-        ExcelColumn excelColumn = (ExcelColumn) conf.getAnnotations().get(ExcelColumn.class);
-        String columnName = excelColumn.columnName();
-        if (StringUtils.isBlank(columnName))
-        {
-            return conf.getField().getName();
-        }
-        return columnName;
     }
 
     /**
