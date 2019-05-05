@@ -16,15 +16,27 @@ import java.util.Map;
 public class ExcelColumnConfiguration {
 
 
-    private TypeDescriptor typeDescriptor;
 
-    private DataFormatter formatter;
-
-    private Map<Class,Annotation> annotations;
+    private String columnName;
 
     private Field field;
 
     private Method method;
+
+    private DataFormatter formatter;
+
+    private TypeDescriptor typeDescriptor;
+
+    private Map<Class,Annotation> annotations;
+
+
+    public String getColumnName() {
+        return columnName;
+    }
+
+    public void setColumnName(String columnName) {
+        this.columnName = columnName;
+    }
 
     public TypeDescriptor getTypeDescriptor() {
         return typeDescriptor;
@@ -33,7 +45,6 @@ public class ExcelColumnConfiguration {
     public void setTypeDescriptor(TypeDescriptor typeDescriptor) {
         this.typeDescriptor = typeDescriptor;
     }
-
 
     public DataFormatter getFormatter() {
         return formatter;

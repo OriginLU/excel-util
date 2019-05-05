@@ -1,6 +1,5 @@
 package com.chl.excel.util;
 
-import com.chl.excel.annotation.ExcelColumn;
 import com.chl.excel.configure.ExcelConfigurationLoader;
 import com.chl.excel.converter.DefaultFormatterConverter;
 import com.chl.excel.entity.ExcelColumnConfiguration;
@@ -23,7 +22,7 @@ import java.util.List;
  * @author LCH
  * @since 2018-06-13
  */
-public abstract class POIExcelUtils{
+public abstract class POIUtils {
 
     private final static int CELL_WIDTH = 20;
 
@@ -33,9 +32,9 @@ public abstract class POIExcelUtils{
 
     public static Workbook createExcel(List<?> list, Class<?> type) {
 
-        ExcelColumnConfiguration[] conf = ExcelConfigurationLoader.getConfiguration(type);
         String titleName = ExcelConfigurationLoader.getExcelTitleName(type);
         String excelVersion = ExcelConfigurationLoader.getExcelVersion(type);
+        ExcelColumnConfiguration[] conf = ExcelConfigurationLoader.getConfiguration(type);
         Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
         Sheet sheet = createSheet(workbook, titleName,type);
         int rowIndex = createTitleRow(workbook, sheet, titleName, conf.length);
@@ -110,7 +109,7 @@ public abstract class POIExcelUtils{
         CellStyle contentCellStyle = getColumnNameCellStyle(workbook);
         for (int col = 0; col < configs.length; col++)
         {
-            String columnName = getColumnName(configs[col]);
+            String columnName = configs[col].getColumnName();
             Cell cell = row.createCell(col);
             cell.setCellStyle(contentCellStyle);
             cell.setCellValue(columnName);
@@ -131,18 +130,6 @@ public abstract class POIExcelUtils{
         {
             throw new ExcelCreateException("create excel error ", e);
         }
-    }
-
-
-    private static String getColumnName(ExcelColumnConfiguration conf) {
-
-        ExcelColumn excelColumn = (ExcelColumn) conf.getAnnotations().get(ExcelColumn.class);
-        String columnName = excelColumn.columnTitle();
-        if (StringUtils.isBlank(columnName))
-        {
-            return conf.getField().getName();
-        }
-        return columnName;
     }
 
     /**

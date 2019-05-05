@@ -6,6 +6,7 @@ import com.chl.excel.entity.ExcelColumnConfiguration;
 import com.chl.excel.exception.ExcelCreateException;
 import com.chl.excel.exception.RepeatOrderException;
 import com.chl.excel.formatter.DataFormatter;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.TypeDescriptor;
 
 import java.lang.annotation.Annotation;
@@ -96,7 +97,7 @@ public abstract class AbstractConfigurationLoader<T extends Member> implements C
     }
 
 
-    private  ExcelColumnConfiguration createExcelColumnConf(T member) {
+    private ExcelColumnConfiguration createExcelColumnConf(T member) {
 
         ExcelColumnConfiguration column = new ExcelColumnConfiguration();
 
@@ -106,6 +107,7 @@ public abstract class AbstractConfigurationLoader<T extends Member> implements C
             if (annotation.annotationType() == ExcelColumn.class)
             {
                 ExcelColumn col = (ExcelColumn) annotation;
+                column.setColumnName(getColumnName(member,col));
                 column.setFormatter(createDataFormatter(col.formatter()));
             }
             column.addAnnotation(annotation);
@@ -114,6 +116,17 @@ public abstract class AbstractConfigurationLoader<T extends Member> implements C
         setMember(column,member);
 
         return column;
+    }
+
+    protected String getColumnName(T member,ExcelColumn excelColumn){
+
+        String columnName = excelColumn.columnTitle();
+
+        if (StringUtils.isBlank(columnName))
+        {
+            return member.getName();
+        }
+        return columnName;
     }
 
     private  DataFormatter createDataFormatter(Class<? extends DataFormatter> formatter) {
