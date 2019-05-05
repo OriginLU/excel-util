@@ -47,4 +47,9 @@ public class MethodConfigurationLoader extends AbstractConfigurationLoader<Metho
 
         return ReflectUtils.getSpecifiedAnnotationMethods(clazz, ExcelColumn.class);
     }
+
+    @Override
+    protected String getColumnName(Method member, ExcelColumn excelColumn) {
+        return super.getColumnName(member, excelColumn);
+    }
 }
