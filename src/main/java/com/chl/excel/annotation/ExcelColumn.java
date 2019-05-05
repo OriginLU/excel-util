@@ -18,7 +18,7 @@ public @interface ExcelColumn {
     /**
      *  generate the column name
      */
-    String columnTitle() default "";
+    String columnName() default "";
 
     /**
      * default value
