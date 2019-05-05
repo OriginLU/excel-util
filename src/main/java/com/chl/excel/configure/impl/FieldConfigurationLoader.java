@@ -36,4 +36,6 @@ public class FieldConfigurationLoader extends AbstractConfigurationLoader<Field>
         return ReflectUtils.getSpecifiedAnnotationFields(clazz, ExcelColumn.class);
     }
 
+
+
 }
