@@ -1,9 +1,11 @@
 package com.chl.excel.configure;
 
 import com.chl.excel.annotation.Excel;
+import com.chl.excel.annotation.ExcelColumn;
 import com.chl.excel.configure.impl.FieldConfigurationLoader;
 import com.chl.excel.configure.impl.MethodConfigurationLoader;
 import com.chl.excel.entity.ExcelColumnConfiguration;
+import com.chl.excel.util.ReflectUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,14 +42,21 @@ public class ExcelConfigurationLoader {
 
     private static ExcelColumnConfiguration[] loadConfiguration(Class<?> clazz){
 
+        int arraySize = getArraySize(clazz);
 
-        ExcelColumnConfiguration[] configurations = null;
+        ExcelColumnConfiguration[] configurations = new ExcelColumnConfiguration[arraySize];
         for (ConfigurationLoader loader : REGISTER_LOADER)
         {
-            configurations = loader.getExcelColumnConfiguration(clazz, configurations);
+            loader.getExcelColumnConfiguration(clazz, configurations);
         }
         return configurations;
 
+    }
+
+
+    private static int getArraySize(Class<?> clazz){
+
+        return ReflectUtils.getSpecifiedAnnotationFieldsCount(clazz, ExcelColumn.class) + ReflectUtils.getSpecifiedAnnotationMethodsCount(clazz,ExcelColumn.class);
     }
 
 

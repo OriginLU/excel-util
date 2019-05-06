@@ -199,6 +199,27 @@ public abstract class ReflectUtils {
         return list;
     }
 
+
+    public static int getSpecifiedAnnotationFieldsCount(Class clazz, Class<? extends Annotation> annotationClass) {
+
+        int count = 0;
+        Class<?> superclass = clazz.getSuperclass();
+        if (superclass != null && Object.class != superclass)
+        {
+            count = getSpecifiedAnnotationFieldsCount(superclass, annotationClass);
+        }
+
+        Field[] fields = clazz.getDeclaredFields();
+        for (Field field : fields)
+        {
+            if (field.isAnnotationPresent(annotationClass))
+            {
+                count ++;
+            }
+        }
+        return count;
+    }
+
     /**
      * 获取的指定注解方法
      */
@@ -224,6 +245,27 @@ public abstract class ReflectUtils {
             }
         }
         return list;
+    }
+
+
+    public static int getSpecifiedAnnotationMethodsCount(Class clazz, Class<? extends Annotation> annotationClass) {
+
+        int count = 0;
+        Class superclass = clazz.getSuperclass();
+        if (superclass != null && Object.class != superclass)
+        {
+            count = getSpecifiedAnnotationMethodsCount(superclass, annotationClass);
+        }
+
+        Method[] methods = clazz.getDeclaredMethods();
+        for (Method method : methods)
+        {
+            if (method.isAnnotationPresent(annotationClass))
+            {
+               count++;
+            }
+        }
+        return count;
     }
 
 

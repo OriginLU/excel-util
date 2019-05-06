@@ -26,7 +26,6 @@ public abstract class AbstractConfigurationLoader<T extends Member> implements C
         int length = members.size();
         Set<Integer> orders = new HashSet<>();
         LinkedList<Integer> index = new LinkedList<>();
-        conf = initialConfigurationArray(conf,length);
 
         for (int col = 0; col < length; col++)
         {
@@ -36,6 +35,10 @@ public abstract class AbstractConfigurationLoader<T extends Member> implements C
 
             if (order > -1)
             {
+                if (order >= length)
+                {
+                    throw new IndexOutOfBoundsException("the specified index [" + order + "] out of bound,max length is " + length);
+                }
                 if (!orders.add(order))
                 {
                     String memberName = member.getDeclaringClass().getName();
@@ -43,6 +46,8 @@ public abstract class AbstractConfigurationLoader<T extends Member> implements C
                             " in the member [" + memberName + "." + member.getName() + "]," + "which same as the" +
                             " member [" + memberName + "." + getName(conf[order]) + "]");
                 }
+
+
             }
             else
             {
@@ -67,23 +72,6 @@ public abstract class AbstractConfigurationLoader<T extends Member> implements C
             }
         }
         return conf;
-    }
-
-    private ExcelColumnConfiguration[] initialConfigurationArray(ExcelColumnConfiguration[] conf,int size){
-
-
-        if (conf == null)
-        {
-            return new ExcelColumnConfiguration[size];
-        }
-        else
-        {
-            ExcelColumnConfiguration[] newConfigurations = new ExcelColumnConfiguration[conf.length + size];
-            System.arraycopy(conf,0,newConfigurations,0,conf.length);
-
-            return newConfigurations;
-        }
-
     }
 
     private String getName(ExcelColumnConfiguration configuration){
