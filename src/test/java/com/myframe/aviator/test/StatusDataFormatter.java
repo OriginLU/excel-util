@@ -1,5 +1,6 @@
 package com.myframe.aviator.test;
 
+import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.formatter.DataFormatter;
 
 /**
@@ -19,5 +20,12 @@ public class StatusDataFormatter implements DataFormatter {
             return "成功";
         }
         return "失败";
+    }
+
+    @Override
+    public Object convertValue(Object formatValue, ExcelColumnConfiguration configuration) {
+
+
+        return null;
     }
 }
