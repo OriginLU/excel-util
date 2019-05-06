@@ -17,6 +17,7 @@ import org.springframework.expression.TypeConverter;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -235,39 +236,87 @@ public abstract class POIUtils {
 
     public static List<?> importExcel(File file,Class<?> type){
 
-        Workbook workbook = getWorkBook(file);
+        try {
+            Workbook workbook = getWorkBook(file);
 
-        if (workbook != null)
-        {
-            for(int sheetNum = 0;sheetNum < workbook.getNumberOfSheets();sheetNum++)
+            if (workbook != null)
             {
-                Sheet sheet = workbook.getSheetAt(sheetNum);
-                if(sheet != null)
+                List<Object> results = new ArrayList<>();
+                ExcelColumnConfiguration[] importConfiguration = ExcelConfigurationLoader.getImportConfiguration(type);
+                for(int sheetNum = 0;sheetNum < workbook.getNumberOfSheets();sheetNum++)
                 {
-                    int firstRowNum  = sheet.getFirstRowNum();
-                    int lastRowNum = sheet.getLastRowNum();
-
-                    for(int rowNum = firstRowNum + 1;rowNum <= lastRowNum;rowNum++)
+                    Sheet sheet = workbook.getSheetAt(sheetNum);
+                    if(sheet != null)
                     {
-                        Row row = sheet.getRow(rowNum);
-                        if(row != null)
-                        {
-                            int firstCellNum = row.getFirstCellNum();
-                            int lastCellNum = row.getPhysicalNumberOfCells();
-                            for(int cellNum = firstCellNum; cellNum < lastCellNum;cellNum++)
-                            {
-                                Cell cell = row.getCell(cellNum);
-                                Object cellValue = getCellValue(cell);
+                        int firstRowNum  = sheet.getFirstRowNum();
+                        int lastRowNum = sheet.getLastRowNum();
 
+                        for(int rowNum = firstRowNum + 1;rowNum <= lastRowNum;rowNum++)
+                        {
+                            Row row = sheet.getRow(rowNum);
+                            if(row != null)
+                            {
+                                results.add(toObject(row,importConfiguration,type));
                             }
                         }
                     }
                 }
+                return results;
             }
+            return null;
+        } catch (Exception e) {
+            throw new ExcelCreateException("import excel error ",e);
         }
 
-        return null;
     }
+
+
+    private static Object toObject(Row row, ExcelColumnConfiguration[] importConfiguration, Class<?> clazz) throws IllegalAccessException, InstantiationException {
+
+
+        Object target = clazz.newInstance();
+        int firstCellNum = row.getFirstCellNum();
+        int lastCellNum = row.getPhysicalNumberOfCells();
+
+        for(int cellNum = firstCellNum; cellNum < lastCellNum;cellNum++)
+        {
+            Cell cell = row.getCell(cellNum);
+            Object cellValue = getCellValue(cell);
+
+            ExcelColumnConfiguration conf = importConfiguration[cellNum];
+            Object convertValue = convertValue(conf,cellValue);
+            ReflectUtils.setFieldValue(conf.getField(),target,convertValue);
+        }
+        return target;
+    }
+
+
+    private static Object convertValue(ExcelColumnConfiguration conf, Object cellValue) {
+
+        if (null == cellValue)
+        {
+            return null;
+        }
+
+        DataFormatter formatter = conf.getFormatter();
+        if (formatter != null)
+        {
+            return formatter.convertValue(cellValue, conf);
+        }
+
+        Field field = conf.getField();
+
+        TypeDescriptor sourceType = TypeDescriptor.forObject(cellValue);
+        TypeDescriptor targetType = conf.getTypeDescriptor();
+
+        if (CONVERTER.canConvert(sourceType,targetType))
+        {
+            return CONVERTER.convertValue(cellValue,sourceType,targetType);
+        }
+        throw new ExcelCreateException("can't convert to " + field.getType().getName());
+
+    }
+
 
     private static Workbook getWorkBook(File file) {
         return null;
@@ -279,7 +328,7 @@ public abstract class POIUtils {
 
         if(cell == null)
         {
-            return "";
+            return null;
         }
         //把数字当成String来读，避免出现1读成1.0的情况
         if(cell.getCellType() == Cell.CELL_TYPE_NUMERIC)
