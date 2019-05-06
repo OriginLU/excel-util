@@ -15,15 +15,19 @@ import java.util.concurrent.ConcurrentMap;
 public class ExcelConfigurationLoader {
 
 
-    private static final List<ConfigurationLoader> REGISTER_LOADER = new ArrayList<>();
+    private static final List<ConfigurationLoader> EXPORT_REGISTER_LOADER = new ArrayList<>();
+
+    private static final List<ConfigurationLoader> IMPORT_REGISTER_LOADER = new ArrayList<>();
 
     private static ConcurrentMap<Class, ExcelColumnConfiguration[]> excelConf = new ConcurrentHashMap<>(16);
 
 
     static
     {
-        REGISTER_LOADER.add(new FieldConfigurationLoader());
-        REGISTER_LOADER.add(new MethodConfigurationLoader());
+        EXPORT_REGISTER_LOADER.add(new FieldConfigurationLoader());
+        EXPORT_REGISTER_LOADER.add(new MethodConfigurationLoader());
+
+        IMPORT_REGISTER_LOADER.add(new FieldConfigurationLoader());
     }
 
     public static  ExcelColumnConfiguration[] getConfiguration(Class<?> clazz){
@@ -45,7 +49,7 @@ public class ExcelConfigurationLoader {
         int arraySize = getArraySize(clazz);
 
         ExcelColumnConfiguration[] configurations = new ExcelColumnConfiguration[arraySize];
-        for (ConfigurationLoader loader : REGISTER_LOADER)
+        for (ConfigurationLoader loader : EXPORT_REGISTER_LOADER)
         {
             loader.getExcelColumnConfiguration(clazz, configurations);
         }
