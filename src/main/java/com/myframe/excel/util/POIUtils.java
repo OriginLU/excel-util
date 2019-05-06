@@ -14,6 +14,7 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.TypeConverter;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Iterator;
@@ -32,11 +33,12 @@ public abstract class POIUtils {
 
     private final static TypeDescriptor TARGET_TYPE = TypeDescriptor.valueOf(String.class);
 
+
     public static Workbook createExcel(List<?> list, Class<?> type) {
 
         String titleName = ExcelConfigurationLoader.getExcelTitleName(type);
         String excelVersion = ExcelConfigurationLoader.getExcelVersion(type);
-        ExcelColumnConfiguration[] conf = ExcelConfigurationLoader.getConfiguration(type);
+        ExcelColumnConfiguration[] conf = ExcelConfigurationLoader.getExportConfiguration(type);
         Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
         Sheet sheet = createSheet(workbook, titleName,type);
         int rowIndex = createTitleRow(workbook, sheet, titleName, conf.length);
@@ -229,6 +231,89 @@ public abstract class POIUtils {
 
         return cellStyle;
     }
+
+
+    public static List<?> importExcel(File file,Class<?> type){
+
+        Workbook workbook = getWorkBook(file);
+
+        if (workbook != null)
+        {
+            for(int sheetNum = 0;sheetNum < workbook.getNumberOfSheets();sheetNum++)
+            {
+                Sheet sheet = workbook.getSheetAt(sheetNum);
+                if(sheet != null)
+                {
+                    int firstRowNum  = sheet.getFirstRowNum();
+                    int lastRowNum = sheet.getLastRowNum();
+
+                    for(int rowNum = firstRowNum + 1;rowNum <= lastRowNum;rowNum++)
+                    {
+                        Row row = sheet.getRow(rowNum);
+                        if(row != null)
+                        {
+                            int firstCellNum = row.getFirstCellNum();
+                            int lastCellNum = row.getPhysicalNumberOfCells();
+                            for(int cellNum = firstCellNum; cellNum < lastCellNum;cellNum++)
+                            {
+                                Cell cell = row.getCell(cellNum);
+                                Object cellValue = getCellValue(cell);
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static Workbook getWorkBook(File file) {
+        return null;
+    }
+
+
+    private static Object getCellValue(Cell cell){
+
+
+        if(cell == null)
+        {
+            return "";
+        }
+        //把数字当成String来读，避免出现1读成1.0的情况
+        if(cell.getCellType() == Cell.CELL_TYPE_NUMERIC)
+        {
+            cell.setCellType(Cell.CELL_TYPE_STRING);
+        }
+
+        switch (cell.getCellType())
+        {
+            //数字
+            case Cell.CELL_TYPE_NUMERIC:
+                return cell.getNumericCellValue();
+
+            //字符串
+            case Cell.CELL_TYPE_STRING:
+                return cell.getStringCellValue();
+
+            //Boolean
+            case Cell.CELL_TYPE_BOOLEAN:
+                return cell.getBooleanCellValue();
+
+            //公式
+            case Cell.CELL_TYPE_FORMULA:
+                return cell.getCellFormula();
+
+            //空值
+            case Cell.CELL_TYPE_BLANK:
+            //故障
+            case Cell.CELL_TYPE_ERROR:
+            default:
+                return "";
+        }
+    }
+
 
     /**
      * merge excel
