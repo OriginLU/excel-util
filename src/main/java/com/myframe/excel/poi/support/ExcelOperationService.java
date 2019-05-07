@@ -9,8 +9,9 @@ public interface ExcelOperationService {
 
 
 
-    Workbook export(List<?> data, Class<?> type,boolean isCreateTitle);
+    Workbook exportSingleSheet(List<?> data, Class<?> type, boolean isCreateTitle);
 
+    Workbook exportMultiSheet(List<?> data, Class<?> type,int maxRowNum,boolean isCreateTitle,boolean isParallelThread);
 
     List<?> importData(InputStream ins,Class<?> type);
 

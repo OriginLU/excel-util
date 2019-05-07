@@ -31,7 +31,7 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
     }
 
     @Override
-    public Workbook export(List<?> data, Class<?> type,boolean isCreateTile) {
+    public Workbook exportSingleSheet(List<?> data, Class<?> type, boolean isCreateTile) {
 
 
         String titleName = ExcelConfigurationLoader.getExcelTitleName(type);
@@ -47,6 +47,14 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
 
         return workbook;
     }
+
+    @Override
+    public Workbook exportMultiSheet(List<?> data, Class<?> type, int maxRowNum, boolean isCreateTitle, boolean isParallelThread) {
+
+
+        return null;
+    }
+
 
     private int createTitleRow(Workbook book, Sheet sheet, String titleName, int columnLength,boolean isCreateTile) {
 
