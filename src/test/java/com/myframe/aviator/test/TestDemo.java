@@ -1,11 +1,13 @@
 package com.myframe.aviator.test;
 
 import com.myframe.excel.exception.RepeatOrderException;
-import com.myframe.excel.util.POIUtils;
+import com.myframe.excel.poi.POIFactory;
+import com.myframe.excel.poi.support.ExcelOperationService;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -28,7 +30,8 @@ public class TestDemo {
             arrayList.add(demo);
         }
         long currentTimeMillis = System.currentTimeMillis();
-        Workbook excel = POIUtils.createWorkbook(arrayList, Demo.class);
+        ExcelOperationService operationService = POIFactory.getInstance().build();
+        Workbook excel = operationService.export(arrayList, Demo.class,false);
         try {
             FileOutputStream outputStream = new FileOutputStream("D:/test.xls");
             excel.write(outputStream);
@@ -73,8 +76,8 @@ public class TestDemo {
                 }
 
 //                if (hasOrder && i != length - 1){
-//                    System.out.println(i + " : " + getFreeIndex(i,conf));
-//                    index.add(getFreeIndex(i,conf));
+//                    System.out.println(i + " : " + getFreeIndex(i,cellstyle));
+//                    index.add(getFreeIndex(i,cellstyle));
 //                }
 
                 if (!index.contains(order = getFreeIndex(i,conf)) && i != length - 1){

@@ -1,11 +1,12 @@
 package com.myframe.aviator.test;
 
-import com.myframe.excel.util.POIUtils;
+import com.googlecode.aviator.AviatorEvaluator;
+import com.googlecode.aviator.Expression;
+import com.myframe.excel.poi.POIFactory;
+import com.myframe.excel.poi.support.ExcelOperationService;
 import com.myframe.excel.util.ReflectUtils;
 import com.myframe.jdbc.extension.expression.function.BlankFunction;
 import com.myframe.jdbc.extension.expression.function.NullFunction;
-import com.googlecode.aviator.AviatorEvaluator;
-import com.googlecode.aviator.Expression;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Test;
 
@@ -118,12 +119,7 @@ public class AviatorTest {
     }
 
 
-    @Test
     public void poiTest(String name){
-
-
-
-
 
 
         List<Demo> list = new ArrayList<>();
@@ -152,7 +148,8 @@ public class AviatorTest {
             System.out.println("start.......");
             long currentTimeMillis = System.currentTimeMillis();
 
-            Workbook excel = POIUtils.createWorkbook(list, Demo.class);
+            ExcelOperationService excelService = POIFactory.getInstance().build();
+            Workbook excel = excelService.export(list, Demo.class,false);
             FileOutputStream outputStream = new FileOutputStream(new File("E:\\git\\frame-util\\target\\" + name));
 
             excel.write(outputStream);
