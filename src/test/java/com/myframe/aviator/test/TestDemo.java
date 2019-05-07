@@ -28,7 +28,7 @@ public class TestDemo {
             arrayList.add(demo);
         }
         long currentTimeMillis = System.currentTimeMillis();
-        Workbook excel = POIUtils.createExcel(arrayList, Demo.class);
+        Workbook excel = POIUtils.createWorkbook(arrayList, Demo.class);
         try {
             FileOutputStream outputStream = new FileOutputStream("D:/test.xls");
             excel.write(outputStream);

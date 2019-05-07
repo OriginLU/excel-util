@@ -152,8 +152,8 @@ public class AviatorTest {
             System.out.println("start.......");
             long currentTimeMillis = System.currentTimeMillis();
 
-            Workbook excel = POIUtils.createExcel(list, Demo.class);
-            FileOutputStream outputStream = new FileOutputStream(new File("E:\\git\\excel-util\\target\\" + name));
+            Workbook excel = POIUtils.createWorkbook(list, Demo.class);
+            FileOutputStream outputStream = new FileOutputStream(new File("E:\\git\\frame-util\\target\\" + name));
 
             excel.write(outputStream);
 

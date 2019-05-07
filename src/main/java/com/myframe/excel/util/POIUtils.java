@@ -15,6 +15,7 @@ import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.TypeConverter;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -35,17 +36,32 @@ public abstract class POIUtils {
     private final static TypeDescriptor TARGET_TYPE = TypeDescriptor.valueOf(String.class);
 
 
-    public static Workbook createExcel(List<?> list, Class<?> type) {
+    public static Workbook createWorkbook(List<?> list, Class<?> type)
+    {
+        return createWorkbook(list,type,false);
+    }
+
+    public static Workbook createWorkbook(List<?> list, Class<?> type, boolean isCreateTile) {
 
         String titleName = ExcelConfigurationLoader.getExcelTitleName(type);
         String excelVersion = ExcelConfigurationLoader.getExcelVersion(type);
         ExcelColumnConfiguration[] conf = ExcelConfigurationLoader.getExportConfiguration(type);
         Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
+
         Sheet sheet = createSheet(workbook, titleName,type);
-        int rowIndex = createTitleRow(workbook, sheet, titleName, conf.length);
+        int rowIndex = createTitleRow(workbook, sheet, titleName, conf.length,isCreateTile);
         rowIndex = createColumnNameRow(workbook, sheet, conf, rowIndex);
         createContentRow(workbook, sheet, list, conf, rowIndex);
+        autoSizeColumn(sheet,conf.length);
+
         return workbook;
+    }
+
+    private static void autoSizeColumn(Sheet sheet, int length) {
+
+        for (int i = 0; i < length; i++) {
+            sheet.autoSizeColumn(i);
+        }
     }
 
 
@@ -54,6 +70,7 @@ public abstract class POIUtils {
         String sheetName = StringUtils.isBlank(titleName) ? type.getSimpleName() : titleName;
         Sheet sheet = workbook.createSheet(sheetName);
         sheet.setDefaultColumnWidth(CELL_WIDTH);
+
         return sheet;
     }
 
@@ -155,10 +172,10 @@ public abstract class POIUtils {
     /**
      * create title
      */
-    private static int createTitleRow(Workbook book, Sheet sheet, String titleName, int columnLength) {
+    private static int createTitleRow(Workbook book, Sheet sheet, String titleName, int columnLength,boolean isCreateTile) {
 
 
-        if (StringUtils.isNotBlank(titleName))
+        if (StringUtils.isNotBlank(titleName) && isCreateTile)
         {
             Row titleRow = sheet.createRow(0);
             Cell cell = titleRow.createCell(0);
@@ -234,7 +251,7 @@ public abstract class POIUtils {
     }
 
 
-    public static List<?> importExcel(File file,Class<?> type){
+    public static List<?> importWorkbook(File file, Class<?> type){
 
         try {
             Workbook workbook = getWorkBook(file);
@@ -318,8 +335,9 @@ public abstract class POIUtils {
     }
 
 
-    private static Workbook getWorkBook(File file) {
-        return null;
+    private static Workbook getWorkBook(File file) throws Exception {
+
+        return WorkbookFactory.create(new FileInputStream(file));
     }
 
 
