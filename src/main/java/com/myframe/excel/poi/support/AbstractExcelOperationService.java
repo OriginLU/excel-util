@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.springframework.core.convert.ConverterNotFoundException;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.TypeConverter;
 
@@ -42,9 +43,7 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
     protected Sheet createSheet(Workbook workbook, String titleName, Class type) {
 
         String sheetName = StringUtils.isBlank(titleName) ? type.getSimpleName() : titleName;
-        Sheet sheet = workbook.createSheet(sheetName);
-
-        return sheet;
+        return workbook.createSheet(sheetName);
     }
 
     protected  String convertToString(Object source, Object target, ExcelColumnConfiguration conf) {
@@ -54,19 +53,27 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
             return conf.getDefaultValue();
         }
 
-        DataFormatter formatter = conf.getFormatter();
-        if (formatter != null)
-        {
-            return formatter.format(source,target);
-        }
+        try {
 
-        TypeDescriptor sourceType = conf.getTypeDescriptor();
-        if (converter.canConvert(sourceType,TARGET_TYPE))
-        {
-            return (String) converter.convertValue(target,sourceType,TARGET_TYPE);
-        }
+            DataFormatter formatter = conf.getFormatter();
+            if (formatter != null)
+            {
+                return formatter.format(source,target);
+            }
 
-        throw new ExcelCreateException("can't convert " + target.getClass() + "to string");
+            TypeDescriptor sourceType = conf.getTypeDescriptor();
+            if (converter.canConvert(sourceType,TARGET_TYPE))
+            {
+                return (String) converter.convertValue(target,sourceType,TARGET_TYPE);
+            }
+
+            throw new ConverterNotFoundException(sourceType, TARGET_TYPE);
+
+        }
+        catch (Throwable e)
+        {
+            throw new ExcelCreateException("the " + conf.getColumnName() +" convert occur error,the value is [" + target +"]",e);
+        }
     }
 
 
@@ -77,22 +84,29 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
             return null;
         }
 
-        DataFormatter formatter = conf.getFormatter();
-        if (formatter != null)
+        try
         {
-            return formatter.convertValue(cellValue, conf);
+
+            DataFormatter formatter = conf.getFormatter();
+            if (formatter != null)
+            {
+                return formatter.convertValue(cellValue, conf);
+            }
+
+            TypeDescriptor sourceType = TypeDescriptor.forObject(cellValue);
+            TypeDescriptor targetType = conf.getTypeDescriptor();
+
+            if (converter.canConvert(sourceType,targetType))
+            {
+                return converter.convertValue(cellValue,sourceType,targetType);
+            }
+
+            throw new ConverterNotFoundException(sourceType,targetType);
         }
-
-        Field field = conf.getField();
-
-        TypeDescriptor sourceType = TypeDescriptor.forObject(cellValue);
-        TypeDescriptor targetType = conf.getTypeDescriptor();
-
-        if (converter.canConvert(sourceType,targetType))
+        catch (Throwable e)
         {
-            return converter.convertValue(cellValue,sourceType,targetType);
+            throw new ExcelCreateException("the " + conf.getColumnName() +" convert occur error,the value is [" + cellValue +"]",e);
         }
-        throw new ExcelCreateException("can't convert to " + field.getType().getName());
 
     }
 
