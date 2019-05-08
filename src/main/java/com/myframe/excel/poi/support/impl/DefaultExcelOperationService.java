@@ -1,6 +1,6 @@
 package com.myframe.excel.poi.support.impl;
 
-import com.myframe.excel.configure.ExcelConfigurationLoader;
+import com.myframe.excel.loader.ExcelConfigurationLoader;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.entity.ExcelConfiguration;
 import com.myframe.excel.exception.ExcelCreateException;

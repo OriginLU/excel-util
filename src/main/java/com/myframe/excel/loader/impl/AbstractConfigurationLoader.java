@@ -1,7 +1,7 @@
-package com.myframe.excel.configure.impl;
+package com.myframe.excel.loader.impl;
 
 import com.myframe.excel.annotation.ExcelColumn;
-import com.myframe.excel.configure.ConfigurationLoader;
+import com.myframe.excel.loader.ConfigurationLoader;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.exception.ExcelCreateException;
 import com.myframe.excel.exception.RepeatOrderException;

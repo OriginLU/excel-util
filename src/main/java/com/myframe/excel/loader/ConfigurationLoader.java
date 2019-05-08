@@ -1,4 +1,4 @@
-package com.myframe.excel.configure;
+package com.myframe.excel.loader;
 
 import com.myframe.excel.entity.ExcelColumnConfiguration;
 

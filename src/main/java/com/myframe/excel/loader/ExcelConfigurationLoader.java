@@ -1,9 +1,9 @@
-package com.myframe.excel.configure;
+package com.myframe.excel.loader;
 
 import com.myframe.excel.annotation.Excel;
 import com.myframe.excel.annotation.ExcelColumn;
-import com.myframe.excel.configure.impl.FieldConfigurationLoader;
-import com.myframe.excel.configure.impl.MethodConfigurationLoader;
+import com.myframe.excel.loader.impl.FieldConfigurationLoader;
+import com.myframe.excel.loader.impl.MethodConfigurationLoader;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.entity.ExcelConfiguration;
 import com.myframe.excel.exception.ExcelCreateException;
