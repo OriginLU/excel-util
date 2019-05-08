@@ -162,7 +162,7 @@ public class AviatorTest {
             long currentTimeMillis = System.currentTimeMillis();
 
             ExcelOperationService excelService = POIFactory.getInstance().build();
-            Workbook excel = excelService.exportSingleSheet(list, Demo.class);
+            Workbook excel = excelService.exportSheet(list, Demo.class);
             FileOutputStream outputStream = new FileOutputStream(new File("D:\\Projects\\frame-util\\target\\" + name));
 
             excel.write(outputStream);

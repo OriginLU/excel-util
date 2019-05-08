@@ -33,7 +33,7 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
     }
 
     @Override
-    public Workbook exportSingleSheet(List<?> data, Class<?> type) {
+    public Workbook exportSheet(List<?> data, Class<?> type) {
 
 
         ExcelConfiguration exportConfiguration = ExcelConfigurationLoader.getExportConfiguration(type);
