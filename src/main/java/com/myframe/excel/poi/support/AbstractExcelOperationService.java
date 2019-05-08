@@ -77,6 +77,26 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
     }
 
 
+    protected  String convertToString(Object target) {
+
+        if (target == null)
+        {
+            return "";
+        }
+
+        TypeDescriptor sourceType = TypeDescriptor.forObject(target);
+        if (converter.canConvert(sourceType,TARGET_TYPE))
+        {
+            String convertValue = (String) converter.convertValue(target, sourceType, TARGET_TYPE);
+
+            return convertValue.trim();
+        }
+
+        return "";
+
+    }
+
+
     protected  Object convertValue(ExcelColumnConfiguration conf, Object cellValue) {
 
         if (null == cellValue)

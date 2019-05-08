@@ -15,9 +15,18 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Excel {
 
+    /**
+     * create excel name
+     */
     String value() default "";
 
-    String version() default VersionConstant.EXCEL_2007_ADV;
+    /**
+     * specified version to generate excel file formats
+     */
+    String version() default VersionConstant.EXCEL_2003;
 
+    /**
+     * will be not create title in file if false
+     */
     boolean isCreateTitle() default true;
 }

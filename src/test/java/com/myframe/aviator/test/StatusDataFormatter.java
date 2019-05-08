@@ -26,6 +26,12 @@ public class StatusDataFormatter implements DataFormatter {
     public Object convertValue(Object formatValue, ExcelColumnConfiguration configuration) {
 
 
-        return null;
+        String status = (String) formatValue;
+
+        if ("成功".equals(status))
+        {
+            return "1";
+        }
+        return "0";
     }
 }

@@ -10,9 +10,7 @@ import com.myframe.jdbc.extension.expression.function.NullFunction;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -107,16 +105,31 @@ public class AviatorTest {
         ExecutorService executorService = Executors.newCachedThreadPool();
 
         AviatorTest aviatorTest = new AviatorTest();
+
         for (int i = 0; i < 5; i++) {
 
             final int index = i;
             executorService.execute(() -> {
-
                 aviatorTest.poiTest("test_" + index  + ".xls");
+
             });
         }
         executorService.shutdown();
     }
+
+    @Test
+    public void importExcel(){
+
+        try {
+            ExcelOperationService excelService = POIFactory.getInstance().build();
+            List<?> objects = excelService.importData(new FileInputStream("D:\\Projects\\frame-util\\target\\test_0.xls"), Demo.class);
+
+            System.out.println(objects);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
     public void poiTest(String name){
@@ -150,7 +163,7 @@ public class AviatorTest {
 
             ExcelOperationService excelService = POIFactory.getInstance().build();
             Workbook excel = excelService.exportSingleSheet(list, Demo.class);
-            FileOutputStream outputStream = new FileOutputStream(new File("E:\\git\\frame-util\\target\\" + name));
+            FileOutputStream outputStream = new FileOutputStream(new File("D:\\Projects\\frame-util\\target\\" + name));
 
             excel.write(outputStream);
 

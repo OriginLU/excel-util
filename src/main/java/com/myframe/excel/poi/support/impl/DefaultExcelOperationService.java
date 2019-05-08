@@ -4,6 +4,7 @@ import com.myframe.excel.configure.ExcelConfigurationLoader;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.entity.ExcelConfiguration;
 import com.myframe.excel.exception.ExcelCreateException;
+import com.myframe.excel.exception.ExcelImportException;
 import com.myframe.excel.poi.cellstyle.POICellStyle;
 import com.myframe.excel.poi.support.AbstractExcelOperationService;
 import com.myframe.excel.util.ReflectUtils;
@@ -135,12 +136,13 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
                 List<Object> results = new ArrayList<>();
                 ExcelConfiguration importConfiguration = ExcelConfigurationLoader.getImportConfiguration(type);
                 ExcelColumnConfiguration[] configurations = importConfiguration.getConfigurations();
+
                 for(int sheetNum = 0;sheetNum < workbook.getNumberOfSheets();sheetNum++)
                 {
                     Sheet sheet = workbook.getSheetAt(sheetNum);
                     if(sheet != null)
                     {
-                        int firstRowNum  = sheet.getFirstRowNum();
+                        int firstRowNum  = getFirstRowNum(sheet,importConfiguration);
                         int lastRowNum = sheet.getLastRowNum();
 
                         for(int rowNum = firstRowNum + 1;rowNum <= lastRowNum;rowNum++)
@@ -148,7 +150,7 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
                             Row row = sheet.getRow(rowNum);
                             if(row != null)
                             {
-                                results.add(toObject(row,configurations,type));
+                                results.add(convertToObject(row, configurations, type));
                             }
                         }
                     }
@@ -157,13 +159,53 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
             }
             return null;
         } catch (Exception e) {
-            throw new ExcelCreateException("import excel error ",e);
+
+            throw new ExcelImportException("import excel error ",e);
         }
     }
 
+    private int getFirstRowNum(Sheet sheet, ExcelConfiguration importConfiguration) {
 
 
-    private Object toObject(Row row, ExcelColumnConfiguration[] importConfiguration, Class<?> clazz) throws IllegalAccessException, InstantiationException {
+        int columnLength = 0;
+        int firstRowNum = sheet.getFirstRowNum();
+        int lastRowNum = sheet.getLastRowNum();
+
+        String titleName = importConfiguration.getExcelName();
+        ExcelColumnConfiguration[] configurations = importConfiguration.getConfigurations();
+        for (int rowNum = firstRowNum; rowNum < lastRowNum; rowNum ++) {
+
+            Row row = sheet.getRow(rowNum);
+
+            int firstCellNum = row.getFirstCellNum();
+            int lastCellNum = row.getPhysicalNumberOfCells();
+
+            for(int cellNum = firstCellNum; cellNum < lastCellNum;cellNum++)
+            {
+                Cell cell = row.getCell(cellNum);
+                Object cellValue = getCellValue(cell);
+                String column = convertToString(cellValue);
+                if (titleName.equals(column))
+                {
+                    continue;
+                }
+
+                if (configurations[cellNum].getColumnName().equals(column))
+                {
+                    columnLength ++;
+                }
+
+                if (columnLength == configurations.length)
+                {
+                    return rowNum + 1;
+                }
+            }
+        }
+        throw new ExcelImportException("inconsistent number of matching columns,and the match column length is " + columnLength + ",check your upload data please");
+    }
+
+
+    private Object convertToObject(Row row, ExcelColumnConfiguration[] importConfiguration, Class<?> clazz) throws IllegalAccessException, InstantiationException {
 
 
         Object target = clazz.newInstance();

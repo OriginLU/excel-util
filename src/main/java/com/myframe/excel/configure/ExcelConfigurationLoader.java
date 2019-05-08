@@ -36,30 +36,28 @@ public class ExcelConfigurationLoader {
 
     public static  ExcelConfiguration getExportConfiguration(Class<?> clazz){
 
-
-
-        ExcelConfiguration conf = exportConfCache.get(clazz);
-        if (conf == null)
+        ExcelConfiguration exportConfiguration = exportConfCache.get(clazz);
+        if (exportConfiguration == null)
         {
-            ExcelConfiguration excelConfiguration = createExcelConfiguration(clazz);
-            excelConfiguration.setConfigurations(loadConfiguration(clazz,EXPORT_REGISTER_LOADER));
-            exportConfCache.putIfAbsent(clazz, excelConfiguration);
+            exportConfiguration = createExcelConfiguration(clazz);
+            exportConfiguration.setConfigurations(loadConfiguration(clazz,EXPORT_REGISTER_LOADER));
+            exportConfCache.putIfAbsent(clazz, exportConfiguration);
         }
-        return conf;
+        return exportConfiguration;
 
     }
 
     public static  ExcelConfiguration getImportConfiguration(Class<?> clazz){
 
 
-        ExcelConfiguration conf = importConfCache.get(clazz);
-        if (conf == null)
+        ExcelConfiguration importConfiguration = importConfCache.get(clazz);
+        if (importConfiguration == null)
         {
-            ExcelConfiguration excelConfiguration = createExcelConfiguration(clazz);
-            excelConfiguration.setConfigurations(loadConfiguration(clazz,IMPORT_REGISTER_LOADER));
-            importConfCache.putIfAbsent(clazz, excelConfiguration);
+            importConfiguration = createExcelConfiguration(clazz);
+            importConfiguration.setConfigurations(loadConfiguration(clazz,IMPORT_REGISTER_LOADER));
+            importConfCache.putIfAbsent(clazz, importConfiguration);
         }
-        return conf;
+        return importConfiguration;
 
     }
 
