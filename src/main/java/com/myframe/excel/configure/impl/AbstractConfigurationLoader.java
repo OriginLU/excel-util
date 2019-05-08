@@ -6,6 +6,7 @@ import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.exception.ExcelCreateException;
 import com.myframe.excel.exception.RepeatOrderException;
 import com.myframe.excel.formatter.DataFormatter;
+import com.myframe.excel.support.spring.AutowireDataFormatterBeanFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.TypeDescriptor;
 
@@ -124,7 +125,7 @@ public abstract class AbstractConfigurationLoader<T extends Member> implements C
         {
             try
             {
-                return formatter.newInstance();
+                return (DataFormatter) AutowireDataFormatterBeanFactory.autowireBean(formatter.newInstance());
             }
             catch (Throwable e)
             {
