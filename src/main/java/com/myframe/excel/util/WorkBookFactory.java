@@ -16,14 +16,15 @@ public abstract class WorkBookFactory {
 
         switch (version){
 
-            case VersionConstant.EXCEL_2003:
-                return new HSSFWorkbook();
+
+
             case VersionConstant.EXCEL_2007:
                 return new XSSFWorkbook();
             case VersionConstant.EXCEL_2007_ADV:
-            default:
                 return new SXSSFWorkbook(-1);
-
+            case VersionConstant.EXCEL_2003:
+            default:
+                return new HSSFWorkbook();
         }
     }
 }
