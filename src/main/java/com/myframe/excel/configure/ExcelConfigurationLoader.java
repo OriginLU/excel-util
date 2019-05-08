@@ -39,8 +39,9 @@ public class ExcelConfigurationLoader {
         ExcelConfiguration exportConfiguration = exportConfCache.get(clazz);
         if (exportConfiguration == null)
         {
+            int size = getExportArraySize(clazz);
             exportConfiguration = createExcelConfiguration(clazz);
-            exportConfiguration.setConfigurations(loadConfiguration(clazz,EXPORT_REGISTER_LOADER));
+            exportConfiguration.setConfigurations(loadConfiguration(clazz,EXPORT_REGISTER_LOADER,size));
             exportConfCache.putIfAbsent(clazz, exportConfiguration);
         }
         return exportConfiguration;
@@ -53,8 +54,9 @@ public class ExcelConfigurationLoader {
         ExcelConfiguration importConfiguration = importConfCache.get(clazz);
         if (importConfiguration == null)
         {
+            int  arraySize = getImportArraySize(clazz);
             importConfiguration = createExcelConfiguration(clazz);
-            importConfiguration.setConfigurations(loadConfiguration(clazz,IMPORT_REGISTER_LOADER));
+            importConfiguration.setConfigurations(loadConfiguration(clazz,IMPORT_REGISTER_LOADER,arraySize));
             importConfCache.putIfAbsent(clazz, importConfiguration);
         }
         return importConfiguration;
@@ -64,11 +66,10 @@ public class ExcelConfigurationLoader {
 
 
 
-    private static ExcelColumnConfiguration[] loadConfiguration(Class<?> clazz,List<ConfigurationLoader> loaders){
+    private static ExcelColumnConfiguration[] loadConfiguration(Class<?> clazz,List<ConfigurationLoader> loaders,int loadSize){
 
-        int arraySize = getArraySize(clazz);
 
-        ExcelColumnConfiguration[] configurations = new ExcelColumnConfiguration[arraySize];
+        ExcelColumnConfiguration[] configurations = new ExcelColumnConfiguration[loadSize];
         for (ConfigurationLoader loader : loaders)
         {
             loader.getExcelColumnConfiguration(clazz, configurations);
@@ -78,9 +79,14 @@ public class ExcelConfigurationLoader {
     }
 
 
-    private static int getArraySize(Class<?> clazz){
+    private static int getExportArraySize(Class<?> clazz){
 
         return ReflectUtils.getSpecifiedAnnotationFieldsCount(clazz, ExcelColumn.class) + ReflectUtils.getSpecifiedAnnotationMethodsCount(clazz,ExcelColumn.class);
+    }
+
+    private static int getImportArraySize(Class<?> clazz){
+
+        return ReflectUtils.getSpecifiedAnnotationFieldsCount(clazz, ExcelColumn.class);
     }
 
 
