@@ -2,6 +2,7 @@ package com.myframe.excel.poi.support.impl;
 
 import com.myframe.excel.configure.ExcelConfigurationLoader;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
+import com.myframe.excel.entity.ExcelConfiguration;
 import com.myframe.excel.exception.ExcelCreateException;
 import com.myframe.excel.poi.cellstyle.POICellStyle;
 import com.myframe.excel.poi.support.AbstractExcelOperationService;
@@ -31,16 +32,19 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
     }
 
     @Override
-    public Workbook exportSingleSheet(List<?> data, Class<?> type, boolean isCreateTile) {
+    public Workbook exportSingleSheet(List<?> data, Class<?> type) {
 
 
-        String titleName = ExcelConfigurationLoader.getExcelTitleName(type);
-        String excelVersion = ExcelConfigurationLoader.getExcelVersion(type);
-        ExcelColumnConfiguration[] conf = ExcelConfigurationLoader.getExportConfiguration(type);
+        ExcelConfiguration exportConfiguration = ExcelConfigurationLoader.getExportConfiguration(type);
+
+        String titleName = exportConfiguration.getExcelName();
+        String excelVersion = exportConfiguration.getVersion();
+        boolean createTitle = exportConfiguration.isCreateTitle();
+        ExcelColumnConfiguration[] conf = exportConfiguration.getConfigurations();
+
         Workbook workbook = WorkBookFactory.createWorkBook(excelVersion);
-
         Sheet sheet = createSheet(workbook, titleName,type);
-        int rowIndex = createTitleRow(workbook, sheet, titleName, conf.length,isCreateTile);
+        int rowIndex = createTitleRow(workbook, sheet, titleName, conf.length,createTitle);
         rowIndex = createColumnNameRow(workbook, sheet, conf, rowIndex);
         createContentRow(workbook, sheet, data, conf, rowIndex);
         autoSizeColumn(sheet,conf.length);
@@ -49,7 +53,7 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
     }
 
     @Override
-    public Workbook exportMultiSheet(List<?> data, Class<?> type, int maxRowNum, boolean isCreateTitle, boolean isParallelThread) {
+    public Workbook exportMultiSheet(List<?> data, Class<?> type, int maxRowNum, boolean isParallelThread) {
 
 
         return null;
@@ -129,7 +133,8 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
             if (workbook != null)
             {
                 List<Object> results = new ArrayList<>();
-                ExcelColumnConfiguration[] importConfiguration = ExcelConfigurationLoader.getImportConfiguration(type);
+                ExcelConfiguration importConfiguration = ExcelConfigurationLoader.getImportConfiguration(type);
+                ExcelColumnConfiguration[] configurations = importConfiguration.getConfigurations();
                 for(int sheetNum = 0;sheetNum < workbook.getNumberOfSheets();sheetNum++)
                 {
                     Sheet sheet = workbook.getSheetAt(sheetNum);
@@ -143,7 +148,7 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
                             Row row = sheet.getRow(rowNum);
                             if(row != null)
                             {
-                                results.add(toObject(row,importConfiguration,type));
+                                results.add(toObject(row,configurations,type));
                             }
                         }
                     }

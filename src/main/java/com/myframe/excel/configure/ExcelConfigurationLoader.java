@@ -5,6 +5,8 @@ import com.myframe.excel.annotation.ExcelColumn;
 import com.myframe.excel.configure.impl.FieldConfigurationLoader;
 import com.myframe.excel.configure.impl.MethodConfigurationLoader;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
+import com.myframe.excel.entity.ExcelConfiguration;
+import com.myframe.excel.exception.ExcelCreateException;
 import com.myframe.excel.util.ReflectUtils;
 
 import java.util.ArrayList;
@@ -19,9 +21,9 @@ public class ExcelConfigurationLoader {
 
     private static final List<ConfigurationLoader> IMPORT_REGISTER_LOADER = new ArrayList<>();
 
-    private static ConcurrentMap<Class, ExcelColumnConfiguration[]> exportConfCache = new ConcurrentHashMap<>(16);
+    private static ConcurrentMap<Class, ExcelConfiguration> exportConfCache = new ConcurrentHashMap<>(16);
 
-    private static ConcurrentMap<Class, ExcelColumnConfiguration[]> importConfCache = new ConcurrentHashMap<>(16);
+    private static ConcurrentMap<Class, ExcelConfiguration> importConfCache = new ConcurrentHashMap<>(16);
 
 
     static
@@ -32,27 +34,30 @@ public class ExcelConfigurationLoader {
         IMPORT_REGISTER_LOADER.add(new FieldConfigurationLoader());
     }
 
-    public static  ExcelColumnConfiguration[] getExportConfiguration(Class<?> clazz){
+    public static  ExcelConfiguration getExportConfiguration(Class<?> clazz){
 
 
-        ExcelColumnConfiguration[] conf = exportConfCache.get(clazz);
+
+        ExcelConfiguration conf = exportConfCache.get(clazz);
         if (conf == null)
         {
-            conf = loadConfiguration(clazz,EXPORT_REGISTER_LOADER);
-            exportConfCache.putIfAbsent(clazz, conf);
+            ExcelConfiguration excelConfiguration = createExcelConfiguration(clazz);
+            excelConfiguration.setConfigurations(loadConfiguration(clazz,EXPORT_REGISTER_LOADER));
+            exportConfCache.putIfAbsent(clazz, excelConfiguration);
         }
         return conf;
 
     }
 
-    public static  ExcelColumnConfiguration[] getImportConfiguration(Class<?> clazz){
+    public static  ExcelConfiguration getImportConfiguration(Class<?> clazz){
 
 
-        ExcelColumnConfiguration[] conf = importConfCache.get(clazz);
+        ExcelConfiguration conf = importConfCache.get(clazz);
         if (conf == null)
         {
-            conf = loadConfiguration(clazz,IMPORT_REGISTER_LOADER);
-            importConfCache.putIfAbsent(clazz, conf);
+            ExcelConfiguration excelConfiguration = createExcelConfiguration(clazz);
+            excelConfiguration.setConfigurations(loadConfiguration(clazz,IMPORT_REGISTER_LOADER));
+            importConfCache.putIfAbsent(clazz, excelConfiguration);
         }
         return conf;
 
@@ -81,15 +86,22 @@ public class ExcelConfigurationLoader {
     }
 
 
-    public static String getExcelTitleName(Class<?> type) {
+    private static ExcelConfiguration createExcelConfiguration(Class<?> type){
 
-        Excel annotation = type.getAnnotation(Excel.class);
-        return annotation.value();
+
+        Excel excel = type.getAnnotation(Excel.class);
+
+        if (null == excel)
+        {
+            throw new ExcelCreateException("not found excel annotation [@Excel],check please");
+        }
+        ExcelConfiguration configuration = new ExcelConfiguration();
+
+        configuration.setVersion(excel.version());
+        configuration.setExcelName(excel.value());
+        configuration.setCreateTitle(excel.isCreateTitle());
+
+        return configuration;
     }
 
-    public static String getExcelVersion(Class<?> type) {
-
-        Excel annotation = type.getAnnotation(Excel.class);
-        return annotation.version();
-    }
 }

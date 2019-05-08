@@ -18,4 +18,6 @@ public @interface Excel {
     String value() default "";
 
     String version() default VersionConstant.EXCEL_2007_ADV;
+
+    boolean isCreateTitle() default true;
 }
