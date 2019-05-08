@@ -3,6 +3,7 @@ package com.myframe.excel.util;
 import com.myframe.excel.constant.VersionConstant;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 /**
@@ -18,9 +19,11 @@ public abstract class WorkBookFactory {
             case VersionConstant.EXCEL_2003:
                 return new HSSFWorkbook();
             case VersionConstant.EXCEL_2007:
+                return new XSSFWorkbook();
             case VersionConstant.EXCEL_2007_ADV:
-                default:
-                    return new XSSFWorkbook();
+            default:
+                return new SXSSFWorkbook(-1);
+
         }
     }
 }
