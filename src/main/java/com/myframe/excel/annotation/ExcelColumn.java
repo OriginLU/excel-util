@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
 public @interface ExcelColumn {
 
     /**
-     *  specified the column name for excel
+     * specified the column name for excel
      */
     String columnName() default "";
 
@@ -32,7 +32,12 @@ public @interface ExcelColumn {
     int order() default -1;
 
     /**
-     *
+     * format data for export file or convert data for import file
      */
     Class<? extends DataFormatter> formatter() default DataFormatter.class;
+
+    /**
+     * format data for export file or convert data for import file
+     */
+    String formatterClassName() default "";
 }
