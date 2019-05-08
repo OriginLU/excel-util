@@ -31,7 +31,7 @@ public class TestDemo {
         }
         long currentTimeMillis = System.currentTimeMillis();
         ExcelOperationService operationService = POIFactory.getInstance().build();
-        Workbook excel = operationService.exportSingleSheet(arrayList, Demo.class,false);
+        Workbook excel = operationService.exportSingleSheet(arrayList, Demo.class);
         try {
             FileOutputStream outputStream = new FileOutputStream("D:/test.xls");
             excel.write(outputStream);
