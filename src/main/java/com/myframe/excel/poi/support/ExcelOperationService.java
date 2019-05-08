@@ -16,6 +16,6 @@ public interface ExcelOperationService {
     List<?> importData(InputStream ins,Class<?> type);
 
 
-    void mergeExcel(Workbook fromWorkBook, Workbook toWorkBook, String sheetName);
+    void merge(Workbook fromWorkBook, Workbook toWorkBook, String sheetName);
 
 }

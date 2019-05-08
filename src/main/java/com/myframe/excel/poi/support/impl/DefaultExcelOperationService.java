@@ -178,7 +178,7 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
     }
 
     @Override
-    public void mergeExcel(Workbook fromWorkBook, Workbook toWorkBook, String sheetName) {
+    public void merge(Workbook fromWorkBook, Workbook toWorkBook, String sheetName) {
 
         try
         {
