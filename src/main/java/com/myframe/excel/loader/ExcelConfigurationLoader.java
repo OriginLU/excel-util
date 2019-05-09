@@ -1,9 +1,9 @@
-package com.myframe.excel.configure;
+package com.myframe.excel.loader;
 
 import com.myframe.excel.annotation.Excel;
 import com.myframe.excel.annotation.ExcelColumn;
-import com.myframe.excel.configure.impl.FieldConfigurationLoader;
-import com.myframe.excel.configure.impl.MethodConfigurationLoader;
+import com.myframe.excel.loader.impl.FieldConfigurationLoader;
+import com.myframe.excel.loader.impl.MethodConfigurationLoader;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.entity.ExcelConfiguration;
 import com.myframe.excel.exception.ExcelCreateException;
@@ -36,41 +36,40 @@ public class ExcelConfigurationLoader {
 
     public static  ExcelConfiguration getExportConfiguration(Class<?> clazz){
 
-
-
-        ExcelConfiguration conf = exportConfCache.get(clazz);
-        if (conf == null)
+        ExcelConfiguration exportConfiguration = exportConfCache.get(clazz);
+        if (exportConfiguration == null)
         {
-            ExcelConfiguration excelConfiguration = createExcelConfiguration(clazz);
-            excelConfiguration.setConfigurations(loadConfiguration(clazz,EXPORT_REGISTER_LOADER));
-            exportConfCache.putIfAbsent(clazz, excelConfiguration);
+            int size = getExportArraySize(clazz);
+            exportConfiguration = createExcelConfiguration(clazz);
+            exportConfiguration.setConfigurations(loadConfiguration(clazz,EXPORT_REGISTER_LOADER,size));
+            exportConfCache.putIfAbsent(clazz, exportConfiguration);
         }
-        return conf;
+        return exportConfiguration;
 
     }
 
     public static  ExcelConfiguration getImportConfiguration(Class<?> clazz){
 
 
-        ExcelConfiguration conf = importConfCache.get(clazz);
-        if (conf == null)
+        ExcelConfiguration importConfiguration = importConfCache.get(clazz);
+        if (importConfiguration == null)
         {
-            ExcelConfiguration excelConfiguration = createExcelConfiguration(clazz);
-            excelConfiguration.setConfigurations(loadConfiguration(clazz,IMPORT_REGISTER_LOADER));
-            importConfCache.putIfAbsent(clazz, excelConfiguration);
+            int  arraySize = getImportArraySize(clazz);
+            importConfiguration = createExcelConfiguration(clazz);
+            importConfiguration.setConfigurations(loadConfiguration(clazz,IMPORT_REGISTER_LOADER,arraySize));
+            importConfCache.putIfAbsent(clazz, importConfiguration);
         }
-        return conf;
+        return importConfiguration;
 
     }
 
 
 
 
-    private static ExcelColumnConfiguration[] loadConfiguration(Class<?> clazz,List<ConfigurationLoader> loaders){
+    private static ExcelColumnConfiguration[] loadConfiguration(Class<?> clazz,List<ConfigurationLoader> loaders,int loadSize){
 
-        int arraySize = getArraySize(clazz);
 
-        ExcelColumnConfiguration[] configurations = new ExcelColumnConfiguration[arraySize];
+        ExcelColumnConfiguration[] configurations = new ExcelColumnConfiguration[loadSize];
         for (ConfigurationLoader loader : loaders)
         {
             loader.getExcelColumnConfiguration(clazz, configurations);
@@ -80,9 +79,14 @@ public class ExcelConfigurationLoader {
     }
 
 
-    private static int getArraySize(Class<?> clazz){
+    private static int getExportArraySize(Class<?> clazz){
 
         return ReflectUtils.getSpecifiedAnnotationFieldsCount(clazz, ExcelColumn.class) + ReflectUtils.getSpecifiedAnnotationMethodsCount(clazz,ExcelColumn.class);
+    }
+
+    private static int getImportArraySize(Class<?> clazz){
+
+        return ReflectUtils.getSpecifiedAnnotationFieldsCount(clazz, ExcelColumn.class);
     }
 
 

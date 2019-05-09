@@ -1,7 +1,7 @@
-package com.myframe.excel.configure.impl;
+package com.myframe.excel.loader.impl;
 
 import com.myframe.excel.annotation.ExcelColumn;
-import com.myframe.excel.configure.ConfigurationLoader;
+import com.myframe.excel.loader.ConfigurationLoader;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.exception.ExcelCreateException;
 import com.myframe.excel.exception.RepeatOrderException;
@@ -97,15 +97,36 @@ public abstract class AbstractConfigurationLoader<T extends Member> implements C
             if (annotation.annotationType() == ExcelColumn.class)
             {
                 ExcelColumn col = (ExcelColumn) annotation;
+
+                Class<?> formatter = getDataFormatterClass(col);
                 column.setDefaultValue(col.value());
                 column.setColumnName(getColumnName(member,col));
-                column.setFormatter(createDataFormatter(col.formatter()));
+                column.setFormatter(createDataFormatter(formatter));
             }
             column.addAnnotation(annotation);
         }
         column.setTypeDescriptor(createTypeDescriptor(member));
 
         return column;
+    }
+
+    private Class<?> getDataFormatterClass(ExcelColumn col){
+
+        try
+        {
+            String formatterClassName = col.formatterClassName();
+
+            if (StringUtils.isNotBlank(formatterClassName))
+            {
+                return Class.forName(formatterClassName);
+            }
+            return col.formatter();
+        }
+        catch (Throwable e)
+        {
+            throw new ExcelCreateException("the data formatter load occur error",e);
+        }
+
     }
 
     protected String getColumnName(T member,ExcelColumn excelColumn){
@@ -119,7 +140,7 @@ public abstract class AbstractConfigurationLoader<T extends Member> implements C
         return columnName;
     }
 
-    private  DataFormatter createDataFormatter(Class<? extends DataFormatter> formatter) {
+    private  DataFormatter createDataFormatter(Class<?> formatter) {
 
         if (DataFormatter.class != formatter)
         {

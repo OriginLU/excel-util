@@ -9,12 +9,11 @@ public interface ExcelOperationService {
 
 
 
-    Workbook exportSingleSheet(List<?> data, Class<?> type);
+    Workbook exportSheet(List<?> data, Class<?> type);
 
     Workbook exportMultiSheet(List<?> data, Class<?> type,int maxRowNum,boolean isParallelThread);
 
     List<?> importData(InputStream ins,Class<?> type);
-
 
     void merge(Workbook fromWorkBook, Workbook toWorkBook, String sheetName);
 
