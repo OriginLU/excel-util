@@ -158,7 +158,7 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
         ExcelColumnConfiguration[] configurations = new ExcelColumnConfiguration[length];
 
         Set<Integer> orders = new HashSet<>();
-        LinkedList<Integer> index = new LinkedList<>();
+        Deque<Integer> index = new LinkedList<>();
 
         for (int col = 0; col < length; col++)
         {
@@ -170,11 +170,14 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
                 throw new IndexOutOfBoundsException("the specified index [" + order + "] out of bound,max length is " + length);
             }
 
-            if (order > -1 && !orders.add(order))
+            if (order > -1)
             {
-                throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order +
-                 " in the member [" +columnConf.getColumnName() + "]," + "which same as the" +
-                 " member [" + configurationList.get(order).getColumnName() + "]");
+                if (!orders.add(order))
+                {
+                    throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order +
+                            " in the member [" +columnConf.getColumnName() + "]," + "which same as the" +
+                            " member [" + configurationList.get(order).getColumnName() + "]");
+                }
 
             }
             else
@@ -196,7 +199,7 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
 
             if (!index.contains(order = getFreeIndex(col, configurations)) && col != length - 1)
             {
-                index.add(order);
+                index.push(order);
             }
         }
 
