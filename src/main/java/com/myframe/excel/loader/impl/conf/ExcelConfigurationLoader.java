@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentMap;
 public class ExcelConfigurationLoader implements ConfigurationLoader {
 
 
-    private final static ThreadLocal<Map<Class<?>,List<ExcelColumnConfiguration>>> THREAD_CONTEXT = ThreadLocal.withInitial(HashMap::new);
+    private final static ThreadLocal<Map<Class<?>,List<ExcelColumnConfiguration>>> CONFIGURATION_CONTEXT = ThreadLocal.withInitial(HashMap::new);
 
     private static ConfigurationLoader configurationLoader;
 
@@ -221,11 +221,12 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
      */
     private void loadFieldConfiguration(Class<?> type) {
 
+        List<ExcelColumnConfiguration> context = getContext(type);
         ReflectionUtils.doWithFields(type,(field -> {
 
             if (field.isAnnotationPresent(ExcelColumn.class))
             {
-                getContext(type).add(fieldWrapper.createExcelColumnConfiguration(field));
+                context.add(fieldWrapper.createExcelColumnConfiguration(field));
             }
         }));
     }
@@ -237,11 +238,12 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
     private void loadMethodConfiguration(Class<?> type) {
 
 
+        List<ExcelColumnConfiguration> context = getContext(type);
         ReflectionUtils.doWithMethods(type, method -> {
 
             if (method.isAnnotationPresent(ExcelColumn.class))
             {
-                getContext(type).add(methodWrapper.createExcelColumnConfiguration(method));
+                context.add(methodWrapper.createExcelColumnConfiguration(method));
             }
         });
 
@@ -249,12 +251,12 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
 
     private List<ExcelColumnConfiguration> getContext(Class<?> type){
 
-        return THREAD_CONTEXT.get().computeIfAbsent(type, k -> new ArrayList<>());
+        return CONFIGURATION_CONTEXT.get().computeIfAbsent(type, k -> new ArrayList<>());
     }
 
     private void clear(){
 
-       THREAD_CONTEXT.get().clear();
+       CONFIGURATION_CONTEXT.get().clear();
     }
 
 
