@@ -1,6 +1,6 @@
 package com.myframe.jdbc.extension.parse;
 
-import com.myframe.excel.util.ReflectUtils;
+import com.myframe.excel.util.ReflectionUtils;
 import com.myframe.jdbc.extension.annotation.*;
 import com.myframe.jdbc.extension.conf.ConditionConfig;
 import com.myframe.jdbc.extension.conf.SQLConfig;
@@ -45,7 +45,7 @@ public class AnnotationSQLParser {
 
         try
         {
-            List<Method> methods = ReflectUtils.getMethods(clazz);
+            List<Method> methods = ReflectionUtils.getMethods(clazz);
 
             if (!CollectionUtils.isEmpty(methods))
             {

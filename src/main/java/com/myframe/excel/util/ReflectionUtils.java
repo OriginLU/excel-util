@@ -1,6 +1,5 @@
 package com.myframe.excel.util;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -12,7 +11,7 @@ import java.util.List;
  * @author LCH
  * @since 2017-08-29 22:03:24
  */
-public abstract class ReflectUtils {
+public abstract class ReflectionUtils {
 
 
     public static void setFieldValue(Field field, Object obj, Object value) {
@@ -30,14 +29,6 @@ public abstract class ReflectUtils {
         {
             //ignore this exception
         }
-    }
-
-    public static void setFieldValue(String fieldName, Object obj, Object value) throws NoSuchFieldException {
-
-        final Class<?> clazz = obj.getClass();
-        Field field = getField(clazz, fieldName);
-        setFieldValue(field, obj, value);
-
     }
 
 
@@ -75,29 +66,9 @@ public abstract class ReflectUtils {
 
 
     /**
-     * 获取指定域
-     */
-    private static Field getField(Class<?> clazz, String name) throws NoSuchFieldException {
-
-        try
-        {
-            return clazz.getDeclaredField(name);
-        }
-        catch (NoSuchFieldException e)
-        {
-            Class superclass = clazz.getSuperclass();
-            if (superclass == null)
-            {
-                throw new NoSuchFieldException("not found field [" + name + "]");
-            }
-            return getField(superclass, name);
-        }
-    }
-
-    /**
      * 获取目标方法
      */
-    public static Method getMethod(Class<?> target, String methodName, Class<?> ... paramTypes) throws NoSuchMethodException {
+    private static Method getMethod(Class<?> target, String methodName, Class<?> ... paramTypes) throws NoSuchMethodException {
 
         try
         {
@@ -172,101 +143,66 @@ public abstract class ReflectUtils {
         return methods;
     }
 
-    /**
-     * 获取的指定注解声明域
-     */
-    public static List<Field> getSpecifiedAnnotationFields(Class clazz, Class<? extends Annotation> annotationClass) {
+    public static void doWithFields(Class<?> clazz, FieldCallBack callBack) {
 
-        List<Field> list;
         Class<?> superclass = clazz.getSuperclass();
         if (superclass != null && Object.class != superclass)
         {
-            list = getSpecifiedAnnotationFields(superclass, annotationClass);
-        }
-        else
-        {
-            list = new ArrayList<>();
+            doWithFields(superclass, callBack);
         }
 
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields)
         {
-            if (field.isAnnotationPresent(annotationClass))
-            {
-                list.add(field);
+            try {
+                callBack.doWith(field);
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException("Not allowed to access field '" + field.getName() + "':" + e);
             }
         }
-        return list;
     }
 
 
-    public static int getSpecifiedAnnotationFieldsCount(Class clazz, Class<? extends Annotation> annotationClass) {
+    public static void doWithMethods(Class<?> clazz, MethodCallback callBack) {
 
-        int count = 0;
         Class<?> superclass = clazz.getSuperclass();
         if (superclass != null && Object.class != superclass)
         {
-            count = getSpecifiedAnnotationFieldsCount(superclass, annotationClass);
-        }
-
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields)
-        {
-            if (field.isAnnotationPresent(annotationClass))
-            {
-                count ++;
-            }
-        }
-        return count;
-    }
-
-    /**
-     * 获取的指定注解方法
-     */
-    public static List<Method> getSpecifiedAnnotationMethods(Class clazz, Class<? extends Annotation> annotationClass) {
-
-        List<Method> list;
-        Class superclass = clazz.getSuperclass();
-        if (superclass != null && Object.class != superclass)
-        {
-            list = getSpecifiedAnnotationMethods(superclass, annotationClass);
-        }
-        else
-        {
-            list = new ArrayList<>();
+            doWithMethods(superclass, callBack);
         }
 
         Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods)
         {
-            if (method.isAnnotationPresent(annotationClass))
+            try
             {
-                list.add(method);
+                callBack.doWith(method);
+            }
+            catch (IllegalAccessException e)
+            {
+                throw new IllegalStateException("Not allowed to access method '" + method.getName() + "':" + e);
             }
         }
-        return list;
     }
 
 
-    public static int getSpecifiedAnnotationMethodsCount(Class clazz, Class<? extends Annotation> annotationClass) {
+    public interface FieldCallBack{
 
-        int count = 0;
-        Class superclass = clazz.getSuperclass();
-        if (superclass != null && Object.class != superclass)
-        {
-            count = getSpecifiedAnnotationMethodsCount(superclass, annotationClass);
-        }
-
-        Method[] methods = clazz.getDeclaredMethods();
-        for (Method method : methods)
-        {
-            if (method.isAnnotationPresent(annotationClass))
-            {
-               count++;
-            }
-        }
-        return count;
+        /**
+         * Perform an operation using the given field.
+         */
+        void doWith(Field field) throws IllegalArgumentException, IllegalAccessException;
     }
+
+
+    public interface MethodCallback{
+
+        /**
+         * Perform an operation using the given method.
+         */
+        void doWith(Method method) throws IllegalArgumentException, IllegalAccessException;
+    }
+
 
 
 

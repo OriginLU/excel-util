@@ -1,13 +1,12 @@
 package com.myframe.excel.poi.support.impl;
 
-import com.myframe.excel.loader.ExcelConfigurationLoader;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.entity.ExcelConfiguration;
 import com.myframe.excel.exception.ExcelCreateException;
 import com.myframe.excel.exception.ExcelImportException;
 import com.myframe.excel.poi.cellstyle.POICellStyle;
 import com.myframe.excel.poi.support.AbstractExcelOperationService;
-import com.myframe.excel.util.ReflectUtils;
+import com.myframe.excel.util.ReflectionUtils;
 import com.myframe.excel.util.WorkBookFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.*;
@@ -36,7 +35,7 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
     public Workbook exportSheet(List<?> data, Class<?> type) {
 
 
-        ExcelConfiguration exportConfiguration = ExcelConfigurationLoader.getExportConfiguration(type);
+        ExcelConfiguration exportConfiguration = configurationLoader.getExportConfiguration(type);
 
         String titleName = exportConfiguration.getExcelName();
         String excelVersion = exportConfiguration.getVersion();
@@ -134,7 +133,7 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
             if (workbook != null)
             {
                 List<Object> results = new ArrayList<>();
-                ExcelConfiguration importConfiguration = ExcelConfigurationLoader.getImportConfiguration(type);
+                ExcelConfiguration importConfiguration = configurationLoader.getImportConfiguration(type);
                 ExcelColumnConfiguration[] configurations = importConfiguration.getConfigurations();
 
                 for(int sheetNum = 0;sheetNum < workbook.getNumberOfSheets();sheetNum++)
@@ -223,7 +222,7 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
 
             ExcelColumnConfiguration conf = importConfiguration[cellNum];
             Object convertValue = convertValue(conf,cellValue);
-            ReflectUtils.setFieldValue(conf.getField(),target,convertValue);
+            ReflectionUtils.setFieldValue(conf.getField(),target,convertValue);
         }
         return target;
     }

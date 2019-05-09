@@ -17,6 +17,8 @@ public class ExcelColumnConfiguration {
 
 
 
+    private int order;
+
     private String columnName;
 
     private String defaultValue;
@@ -31,6 +33,14 @@ public class ExcelColumnConfiguration {
 
     private Map<Class,Annotation> annotations;
 
+
+    public int getOrder() {
+        return order;
+    }
+
+    public void setOrder(int order) {
+        this.order = order;
+    }
 
     public String getColumnName() {
         return columnName;

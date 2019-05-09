@@ -1,6 +1,6 @@
 package com.myframe.jdbc.extension.util;
 
-import com.myframe.excel.util.ReflectUtils;
+import com.myframe.excel.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -42,10 +42,10 @@ public abstract class EnvUtils {
         else
         {
             Map<String, Object> env = new HashMap<>();
-            List<Field> fields = ReflectUtils.getFields(object.getClass());
+            List<Field> fields = ReflectionUtils.getFields(object.getClass());
             for (Field field : fields)
             {
-                Object value = ReflectUtils.getFieldValue(object, field);
+                Object value = ReflectionUtils.getFieldValue(object, field);
                 env.put(field.getName(),value);
             }
             return env;

@@ -4,9 +4,11 @@ import com.myframe.excel.converter.DefaultFormatterConverter;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.exception.ExcelCreateException;
 import com.myframe.excel.formatter.DataFormatter;
+import com.myframe.excel.loader.ConfigurationLoader;
+import com.myframe.excel.loader.impl.conf.ExcelConfigurationLoader;
 import com.myframe.excel.poi.cellstyle.DefaultCellStyle;
 import com.myframe.excel.poi.cellstyle.POICellStyle;
-import com.myframe.excel.util.ReflectUtils;
+import com.myframe.excel.util.ReflectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -28,6 +30,8 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
 
     protected POICellStyle poiCellStyle;
 
+    protected ConfigurationLoader configurationLoader;
+
 
     public AbstractExcelOperationService() {
 
@@ -37,7 +41,8 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
     public AbstractExcelOperationService(POICellStyle poiCellStyle) {
 
         this.poiCellStyle = poiCellStyle;
-        converter = new DefaultFormatterConverter();
+        this.converter = new DefaultFormatterConverter();
+        this.configurationLoader = ExcelConfigurationLoader.getExcelConfigurationLoader();
     }
 
     protected Sheet createSheet(Workbook workbook, String titleName, Class type) {
@@ -139,13 +144,13 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
 
             if (field != null)
             {
-                return ReflectUtils.getFieldValue(obj, field);
+                return ReflectionUtils.getFieldValue(obj, field);
             }
 
             Method method = conf.getMethod();
             if (method != null)
             {
-                return ReflectUtils.invokeMethod(obj,method);
+                return ReflectionUtils.invokeMethod(obj,method);
             }
 
             return null;
