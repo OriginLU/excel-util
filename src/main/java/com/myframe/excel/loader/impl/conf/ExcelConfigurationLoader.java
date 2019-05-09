@@ -26,14 +26,13 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
 
     private static ConfigurationLoader configurationLoader;
 
-    private  ConcurrentMap<Class, ExcelConfiguration> exportConfCache;
-
-    private  ConcurrentMap<Class, ExcelConfiguration> importConfCache;
-
     private ColumnConfigurationWrapper<Field> fieldWrapper;
 
     private ColumnConfigurationWrapper<Method> methodWrapper;
 
+    private ConcurrentMap<Class, ExcelConfiguration> exportConfCache;
+
+    private ConcurrentMap<Class, ExcelConfiguration> importConfCache;
 
     private ExcelConfigurationLoader() {
 
@@ -141,7 +140,7 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
         }
         finally
         {
-          clear();
+            clear();
         }
     }
 
@@ -197,7 +196,8 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
                 configurations[order] = columnConf;
             }
 
-            if (!index.contains(order = getFreeIndex(col, configurations)) && col != length - 1)
+            order = getFreeIndex(col, configurations);
+            if (!index.contains(order) && col != length - 1)
             {
                 index.push(order);
             }

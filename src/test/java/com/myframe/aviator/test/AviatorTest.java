@@ -2,13 +2,19 @@ package com.myframe.aviator.test;
 
 import com.googlecode.aviator.AviatorEvaluator;
 import com.googlecode.aviator.Expression;
+import com.myframe.excel.annotation.ExcelColumn;
+import com.myframe.excel.entity.ExcelConfiguration;
+import com.myframe.excel.loader.ConfigurationLoader;
+import com.myframe.excel.loader.impl.conf.ExcelConfigurationLoader;
+import com.myframe.excel.loader.impl.wrapper.FieldConfigurationWrapper;
+import com.myframe.excel.loader.impl.wrapper.MethodConfigurationWrapper;
 import com.myframe.excel.poi.POIFactory;
 import com.myframe.excel.poi.support.ExcelOperationService;
-import com.myframe.excel.util.ReflectionUtils;
 import com.myframe.jdbc.extension.expression.function.BlankFunction;
 import com.myframe.jdbc.extension.expression.function.NullFunction;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Test;
+import org.springframework.util.ReflectionUtils;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
@@ -66,15 +72,7 @@ public class AviatorTest {
     @Test
     public void testReflect(){
 
-        Demo demo = new Demo();
-        demo.setName(UUID.randomUUID().toString());
-        try {
-            System.out.println(ReflectionUtils.invokeMethod(demo, "setName", UUID.randomUUID().toString()));
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
+
     }
 
     @Test public void testTimestamp(){
@@ -122,7 +120,7 @@ public class AviatorTest {
 
         try {
             ExcelOperationService excelService = POIFactory.getInstance().build();
-            List<?> objects = excelService.importData(new FileInputStream("E:\\git\\frame-util\\target\\test_0.xls"), Demo.class);
+            List<?> objects = excelService.importData(new FileInputStream("D:\\Projects\\frame-util\\target\\test_0.xls"), Demo.class);
 
             System.out.println(objects);
         } catch (FileNotFoundException e) {
@@ -163,7 +161,7 @@ public class AviatorTest {
 
             ExcelOperationService excelService = POIFactory.getInstance().build();
             Workbook excel = excelService.exportSheet(list, Demo.class);
-            FileOutputStream outputStream = new FileOutputStream(new File("E:\\git\\frame-util\\target\\" + name));
+            FileOutputStream outputStream = new FileOutputStream(new File("D:\\Projects\\frame-util\\target\\" + name));
 
             excel.write(outputStream);
 

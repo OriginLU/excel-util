@@ -143,46 +143,46 @@ public abstract class ReflectionUtils {
         return methods;
     }
 
-    public static void doWithFields(Class<?> clazz, FieldCallBack callBack) {
+    public static void doWithFields(Class<?> targetClass, FieldCallBack fc) {
 
-        Class<?> superclass = clazz.getSuperclass();
-        if (superclass != null && Object.class != superclass)
-        {
-            doWithFields(superclass, callBack);
-        }
 
-        Field[] fields = clazz.getDeclaredFields();
-        for (Field field : fields)
-        {
-            try {
-                callBack.doWith(field);
-            } catch (IllegalAccessException e) {
-                throw new IllegalStateException("Not allowed to access field '" + field.getName() + "':" + e);
+        do {
+            Field[] fields = targetClass.getDeclaredFields();
+            for (Field field : fields)
+            {
+                try
+                {
+                    fc.doWith(field);
+                }
+                catch (IllegalAccessException ex)
+                {
+                    throw new IllegalStateException("Not allowed to access field '" + field.getName() + "': " + ex);
+                }
             }
+            targetClass = targetClass.getSuperclass();
         }
+        while (targetClass != null && targetClass != Object.class);
     }
 
 
-    public static void doWithMethods(Class<?> clazz, MethodCallback callBack) {
+    public static void doWithMethods(Class<?> targetClass, MethodCallback mc) {
 
-        Class<?> superclass = clazz.getSuperclass();
-        if (superclass != null && Object.class != superclass)
-        {
-            doWithMethods(superclass, callBack);
-        }
-
-        Method[] methods = clazz.getDeclaredMethods();
-        for (Method method : methods)
-        {
-            try
+        do {
+            Method[] methods = targetClass.getDeclaredMethods();
+            for (Method method : methods)
             {
-                callBack.doWith(method);
+                try
+                {
+                    mc.doWith(method);
+                }
+                catch (IllegalAccessException ex)
+                {
+                    throw new IllegalStateException("Not allowed to access method '" + method.getName() + "': " + ex);
+                }
             }
-            catch (IllegalAccessException e)
-            {
-                throw new IllegalStateException("Not allowed to access method '" + method.getName() + "':" + e);
-            }
+            targetClass = targetClass.getSuperclass();
         }
+        while (targetClass != null && targetClass != Object.class);
     }
 
 
