@@ -176,17 +176,34 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
             }
             else
             {
-                order = (index.size() > 0) ? index.pop() : getFreeIndex(col, configurations);
+                order = getAvailableIndex(index,col,configurations);
+            }
+
+            if (configurations[order] != null)
+            {
+                int nextIndex = getAvailableIndex(index,col,configurations);
+                ExcelColumnConfiguration temp = configurations[order];
+                configurations[order] = columnConf;
+                configurations[nextIndex] = temp;
+            }
+            else
+            {
+                configurations[order] = columnConf;
             }
 
             if (order != col && configurations[col] == null)
             {
                 index.add(col);
             }
-            configurations[order] = columnConf;
         }
 
         return configurations;
+    }
+
+
+    private int getAvailableIndex(Deque<Integer> index,int currCount,ExcelColumnConfiguration[] configurations){
+
+        return (index.size() > 0) ? index.pop() : getFreeIndex(currCount, configurations);
     }
 
     private int getFreeIndex(int index, ExcelColumnConfiguration[] conf) {

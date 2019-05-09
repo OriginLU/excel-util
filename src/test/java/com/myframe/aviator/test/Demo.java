@@ -15,7 +15,7 @@ public class Demo extends SuperDemo{
 
 
 
-    @ExcelColumn(columnName = "姓名",order = 5)
+    @ExcelColumn(columnName = "姓名")
     String name;
 
     @ExcelColumn(columnName = "编号",order = 2)

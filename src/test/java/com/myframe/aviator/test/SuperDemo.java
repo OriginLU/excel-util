@@ -10,10 +10,10 @@ import com.myframe.excel.annotation.ExcelColumn;
 public class SuperDemo {
 
 
-    @ExcelColumn
+    @ExcelColumn(order = 1)
     private String code;
 
-    @ExcelColumn()
+    @ExcelColumn(order = 0)
     private String time;
 
 
