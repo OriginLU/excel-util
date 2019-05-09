@@ -151,14 +151,10 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
     private ExcelColumnConfiguration[] sortConfiguration(Class<?> type) {
 
         List<ExcelColumnConfiguration> configurationList = getContext(type);
-
         int length = configurationList.size();
-
         ExcelColumnConfiguration[] configurations = new ExcelColumnConfiguration[length];
-
         Set<Integer> orders = new HashSet<>();
         Deque<Integer> index = new ArrayDeque<>();
-
         for (int col = 0; col < length; col++)
         {
             ExcelColumnConfiguration columnConf = configurationList.get(col);
@@ -174,7 +170,7 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
                 if (!orders.add(order))
                 {
                     throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order +
-                            " in the member [" +columnConf.getColumnName() + "]," + "which same as the" +
+                            " in the member [" + columnConf.getColumnName() + "]," + "which same as the" +
                             " member [" + configurationList.get(order).getColumnName() + "]");
                 }
             }
@@ -187,7 +183,6 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
             {
                 index.add(col);
             }
-
             configurations[order] = columnConf;
         }
 
