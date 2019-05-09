@@ -174,5 +174,16 @@ public class AviatorTest {
 
     }
 
+    @Test
+    public void testExcelConfigurationLoader(){
+
+        ConfigurationLoader configurationLoader = ExcelConfigurationLoader.getExcelConfigurationLoader();
+        long currentTimeMillis = System.currentTimeMillis();
+        ExcelConfiguration exportConfiguration = configurationLoader.getImportConfiguration(Demo.class);
+        System.out.println(System.currentTimeMillis() - currentTimeMillis);
+
+        System.out.println(exportConfiguration);
+    }
+
 }
 

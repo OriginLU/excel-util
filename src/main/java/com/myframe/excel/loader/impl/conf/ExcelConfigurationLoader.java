@@ -157,7 +157,7 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
         ExcelColumnConfiguration[] configurations = new ExcelColumnConfiguration[length];
 
         Set<Integer> orders = new HashSet<>();
-        Deque<Integer> index = new LinkedList<>();
+        Deque<Integer> index = new ArrayDeque<>();
 
         for (int col = 0; col < length; col++)
         {
@@ -177,30 +177,18 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
                             " in the member [" +columnConf.getColumnName() + "]," + "which same as the" +
                             " member [" + configurationList.get(order).getColumnName() + "]");
                 }
-
             }
             else
             {
                 order = (index.size() > 0) ? index.pop() : getFreeIndex(col, configurations);
             }
 
-            if (configurations[order] != null)
+            if (order != col && configurations[col] == null)
             {
-                Integer tempIndex = (index.size() > 0) ? index.pop() : getFreeIndex(col, configurations);
-                ExcelColumnConfiguration temp = configurations[order];
-                configurations[order] = columnConf;
-                configurations[tempIndex] = temp;
-            }
-            else
-            {
-                configurations[order] = columnConf;
+                index.add(col);
             }
 
-            order = getFreeIndex(col, configurations);
-            if (!index.contains(order) && col != length - 1)
-            {
-                index.push(order);
-            }
+            configurations[order] = columnConf;
         }
 
         return configurations;

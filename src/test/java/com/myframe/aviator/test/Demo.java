@@ -15,7 +15,7 @@ public class Demo extends SuperDemo{
 
 
 
-    @ExcelColumn(columnName = "姓名",order = 1)
+    @ExcelColumn(columnName = "姓名",order = 5)
     String name;
 
     @ExcelColumn(columnName = "编号",order = 2)
@@ -26,7 +26,7 @@ public class Demo extends SuperDemo{
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     Date createTime;
 
-    @ExcelColumn(columnName = "状态",order = 4,formatter = StatusDataFormatter.class)
+    @ExcelColumn(columnName = "状态",formatter = StatusDataFormatter.class)
     String status;
 
     public Date getCreateTime() {
