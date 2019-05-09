@@ -145,7 +145,7 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
                         int firstRowNum  = getFirstRowNum(sheet,importConfiguration);
                         int lastRowNum = sheet.getLastRowNum();
 
-                        for(int rowNum = firstRowNum + 1;rowNum <= lastRowNum;rowNum++)
+                        for(int rowNum = firstRowNum;rowNum <= lastRowNum;rowNum++)
                         {
                             Row row = sheet.getRow(rowNum);
                             if(row != null)
@@ -173,6 +173,7 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
 
         String titleName = importConfiguration.getExcelName();
         ExcelColumnConfiguration[] configurations = importConfiguration.getConfigurations();
+        int length = configurations.length;
         for (int rowNum = firstRowNum; rowNum < lastRowNum; rowNum ++) {
 
             Row row = sheet.getRow(rowNum);
@@ -194,11 +195,14 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
                 {
                     columnLength ++;
                 }
-
-                if (columnLength == configurations.length)
-                {
-                    return rowNum + 1;
-                }
+            }
+            if (((columnLength > 0 && columnLength < length) && length == lastCellNum) || length < lastCellNum)
+            {
+                break;
+            }
+            else if (columnLength == length)
+            {
+                return rowNum + 1;
             }
         }
         throw new ExcelImportException("inconsistent number of matching columns,and the match column length is " + columnLength + ",check your upload data please");
