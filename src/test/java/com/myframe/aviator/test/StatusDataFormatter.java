@@ -1,6 +1,5 @@
 package com.myframe.aviator.test;
 
-import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.formatter.DataFormatter;
 
 /**
@@ -23,10 +22,10 @@ public class StatusDataFormatter implements DataFormatter {
     }
 
     @Override
-    public Object convertValue(Object formatValue, ExcelColumnConfiguration configuration) {
+    public Object convertValue(String formatValue) {
 
 
-        String status = (String) formatValue;
+        String status =  formatValue;
 
         if ("成功".equals(status))
         {

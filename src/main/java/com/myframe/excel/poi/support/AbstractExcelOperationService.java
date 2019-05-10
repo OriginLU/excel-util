@@ -139,7 +139,7 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
             DataFormatter formatter = conf.getFormatter();
             if (formatter != null)
             {
-                return formatter.convertValue(cellValue, conf);
+                return formatter.convertValue(convertToString(cellValue));
             }
 
             TypeDescriptor sourceType = TypeDescriptor.forObject(cellValue);
