@@ -4,12 +4,12 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.stereotype.Component;
 
+@Component
 public class AutowireDataFormatterBeanFactory implements ApplicationContextAware {
 
-
-
-    private  static AutowireCapableBeanFactory BEAN_FACTORY;
+    private static AutowireCapableBeanFactory BEAN_FACTORY;
 
 
     public static Object autowireBean(Object object){

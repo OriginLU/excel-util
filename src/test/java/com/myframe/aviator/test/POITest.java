@@ -44,7 +44,7 @@ public class POITest {
         try {
             ExcelOperationService excelService = POIFactory.getInstance().build();
             String path = getClass().getResource("/").getPath();
-            List<?> objects = excelService.importData(new FileInputStream(path + "test_0.xls"), Demo.class);
+            List<?> objects = excelService.importData(new FileInputStream(path + "test-0.xls"), Demo.class);
             System.out.println(objects);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
