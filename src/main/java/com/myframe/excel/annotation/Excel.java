@@ -16,17 +16,18 @@ import java.lang.annotation.Target;
 public @interface Excel {
 
     /**
-     * create excel name
+     * specified name for the title of excel file and output file
      */
     String value() default "";
 
     /**
-     * specified version to generate excel file formats
+     * the specified version is used to generate matching excel file,default create
+     * 2003's excel file,about version please see {@link VersionConstant}
      */
     String version() default VersionConstant.EXCEL_2003;
 
     /**
-     * will be not create title in file if false
+     * not create title for excel file if false
      */
     boolean isCreateTitle() default true;
 }
