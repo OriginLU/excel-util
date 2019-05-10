@@ -165,18 +165,15 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
                 throw new IndexOutOfBoundsException("the specified index [" + order + "] out of bound,max length is " + length);
             }
 
-            if (order > -1)
-            {
-                if (!orders.add(order))
-                {
-                    throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order +
-                            " in the member [" + columnConf.getColumnName() + "]," + "which same as the" +
-                            " member [" + configurationList.get(order).getColumnName() + "]");
-                }
-            }
-            else
+            if (order <= -1)
             {
                 order = getAvailableIndex(index,col,configurations);
+            }
+            else if(!orders.add(order))
+            {
+                throw new RepeatOrderException("the order must not be repeated, the repeat order is " + order
+                        + " in the member [" + columnConf.getColumnName() + "]," + "which same as the member ["
+                        + configurationList.get(order).getColumnName() + "]");
             }
 
             if (configurations[order] != null)
