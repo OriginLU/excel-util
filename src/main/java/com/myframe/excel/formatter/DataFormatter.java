@@ -7,8 +7,14 @@ package com.myframe.excel.formatter;
 public interface DataFormatter {
 
 
+    /**
+     * format value for export excel file
+     */
     String format(Object source,Object formatValue);
 
 
+    /**
+     * convert the available value for object
+     */
     Object convertValue(String formatValue);
 }
