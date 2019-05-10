@@ -19,6 +19,7 @@ import org.springframework.expression.TypeConverter;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.List;
 
 public abstract class AbstractExcelOperationService implements ExcelOperationService {
 
@@ -50,6 +51,29 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
         String sheetName = StringUtils.isBlank(titleName) ? type.getSimpleName() : titleName;
         return workbook.createSheet(sheetName);
     }
+
+
+
+    protected List<?> getNextList(List<?> totalList, int count,int separateRowNum) {
+
+        int size = totalList.size();
+
+        int start = separateRowNum * count;
+        int end = start + separateRowNum;
+        end = end < size ? end : size;
+
+        return totalList.subList(start, end);
+    }
+
+    protected int getCycleCount(int totalCount,int separateRowNum)
+    {
+        if ((totalCount % separateRowNum) != 0)
+        {
+            return (totalCount / separateRowNum) + 1;
+        }
+        return totalCount / separateRowNum;
+    }
+
 
     protected  String convertToString(Object source, Object target, ExcelColumnConfiguration conf) {
 
