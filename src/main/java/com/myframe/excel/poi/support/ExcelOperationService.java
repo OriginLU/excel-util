@@ -5,13 +5,13 @@ import org.apache.poi.ss.usermodel.Workbook;
 import java.io.InputStream;
 import java.util.List;
 
-public interface ExcelOperationService {
+public interface ExcelOperationService{
 
 
 
     Workbook exportSheet(List<?> data, Class<?> type);
 
-    Workbook exportMultiSheet(List<?> data, Class<?> type,int maxRowNum,boolean isParallelThread);
+    Workbook exportMultiSheet(List<?> data, Class<?> type,int maxRowNum);
 
     List<?> importData(InputStream ins,Class<?> type);
 

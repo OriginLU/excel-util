@@ -17,13 +17,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class DefaultExcelOperationService extends AbstractExcelOperationService {
 
-
-    private ExecutorService executorService;
 
     public DefaultExcelOperationService() {
 
@@ -36,7 +32,6 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
     }
 
 
-
     @Override
     public Workbook exportSheet(List<?> data, Class<?> type) {
 
@@ -45,7 +40,6 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
 
         String titleName = exportConfiguration.getExcelName();
         String version = exportConfiguration.getVersion();
-        ExcelColumnConfiguration[] conf = exportConfiguration.getConfigurations();
 
         Workbook workbook = WorkBookFactory.createWorkBook(version);
         Sheet sheet = createSheet(workbook,titleName,type);
@@ -54,63 +48,23 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
         return workbook;
     }
 
-    private void initExecutor(boolean isParallel) {
-
-        if (isParallel)
-        {
-            if (null == executorService)
-            {
-                synchronized (this)
-                {
-                    if (null == executorService)
-                    {
-                        executorService = Executors.newFixedThreadPool(3);
-                    }
-                }
-            }
-        }
-
-    }
-
     @Override
-    public Workbook exportMultiSheet(List<?> data, Class<?> type, int maxRowNum, boolean isParallelThread) {
+    public Workbook exportMultiSheet(List<?> data, Class<?> type, int maxRowNum) {
 
-
-        initExecutor(isParallelThread);
         int cycleCount = getCycleCount(data.size(), maxRowNum);
         ExcelConfiguration exportConfiguration = configurationLoader.getExportConfiguration(type);
         String version = exportConfiguration.getVersion();
         String titleName = exportConfiguration.getExcelName();
         Workbook workBook = WorkBookFactory.createWorkBook(version);
-
         for (int index = 0; index < cycleCount; index++)
         {
             Sheet sheet = createSheet(workBook, titleName + "-" + index, type);
 
             List<?> nextList = getNextList(data, index, maxRowNum);
 
-            if (isParallelThread)
-            {
-                doCreateRowParallel(nextList,workBook,sheet,exportConfiguration);
-            }
-            else
-            {
-                doCreateRow(nextList,workBook,sheet,exportConfiguration);
-            }
+            doCreateRow(nextList,workBook,sheet,exportConfiguration);
         }
-
         return workBook;
-    }
-
-    private void doCreateRowParallel(List<?> data,Workbook workbook,Sheet sheet,ExcelConfiguration configuration) {
-
-        executorService.execute(() -> doCreateRow(data,workbook,sheet,configuration));
-
-    }
-
-
-    public void shutdown() {
-        executorService.shutdown();
     }
 
     private void doCreateRow(List<?> data,Workbook workbook,Sheet sheet,ExcelConfiguration configuration)
