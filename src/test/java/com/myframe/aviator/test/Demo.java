@@ -2,6 +2,7 @@ package com.myframe.aviator.test;
 
 import com.myframe.excel.annotation.Excel;
 import com.myframe.excel.annotation.ExcelColumn;
+import com.myframe.excel.constant.VersionConstant;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.util.Date;
@@ -10,7 +11,7 @@ import java.util.Date;
  * @author LCH
  * @since 2018-06-27
  */
-@Excel("测试")
+@Excel(value = "测试",version = VersionConstant.EXCEL_2007_ADV)
 public class Demo extends SuperDemo{
 
 

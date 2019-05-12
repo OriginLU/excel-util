@@ -20,7 +20,7 @@ public abstract class WorkBookFactory {
                 return new XSSFWorkbook();
 
             case VersionConstant.EXCEL_2007_ADV:
-                return new SXSSFWorkbook(-1);
+                return new SXSSFWorkbook();
 
             case VersionConstant.EXCEL_2003:
             default:

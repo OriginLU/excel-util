@@ -51,11 +51,12 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
     @Override
     public Workbook exportMultiSheet(List<?> data, Class<?> type, int maxRowNum) {
 
-        int cycleCount = getCycleCount(data.size(), maxRowNum);
         ExcelConfiguration exportConfiguration = configurationLoader.getExportConfiguration(type);
         String version = exportConfiguration.getVersion();
         String titleName = exportConfiguration.getExcelName();
         Workbook workBook = WorkBookFactory.createWorkBook(version);
+
+        int cycleCount = getCycleCount(data.size(), maxRowNum);
         for (int index = 0; index < cycleCount; index++)
         {
             Sheet sheet = createSheet(workBook, titleName + "-" + index, type);
@@ -150,33 +151,30 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
         try {
             Workbook workbook = WorkbookFactory.create(ins);
 
-            if (workbook != null)
+            ExcelConfiguration importConfiguration = configurationLoader.getImportConfiguration(type);
+            ExcelColumnConfiguration[] configurations = importConfiguration.getConfigurations();
+            List<Object> results = new ArrayList<>();
+
+            for(int sheetNum = 0;sheetNum < workbook.getNumberOfSheets();sheetNum++)
             {
-                List<Object> results = new ArrayList<>();
-                ExcelConfiguration importConfiguration = configurationLoader.getImportConfiguration(type);
-                ExcelColumnConfiguration[] configurations = importConfiguration.getConfigurations();
-
-                for(int sheetNum = 0;sheetNum < workbook.getNumberOfSheets();sheetNum++)
+                Sheet sheet = workbook.getSheetAt(sheetNum);
+                if(sheet != null)
                 {
-                    Sheet sheet = workbook.getSheetAt(sheetNum);
-                    if(sheet != null)
-                    {
-                        int firstRowNum  = getFirstRowNum(sheet,importConfiguration);
-                        int lastRowNum = sheet.getLastRowNum();
+                    int firstRowNum  = getFirstRowNum(sheet,importConfiguration);
+                    int lastRowNum = sheet.getLastRowNum();
 
-                        for(int rowNum = firstRowNum;rowNum <= lastRowNum;rowNum++)
+                    for(int rowNum = firstRowNum;rowNum <= lastRowNum;rowNum++)
+                    {
+                        Row row = sheet.getRow(rowNum);
+                        if(row != null)
                         {
-                            Row row = sheet.getRow(rowNum);
-                            if(row != null)
-                            {
-                                results.add(convertToObject(row, configurations, type));
-                            }
+                            results.add(convertToObject(row, configurations, type));
                         }
                     }
                 }
-                return results;
             }
-            return null;
+            return results;
+
         } catch (Exception e) {
 
             throw new ExcelImportException("import excel error ",e);

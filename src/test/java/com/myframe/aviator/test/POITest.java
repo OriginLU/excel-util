@@ -1,6 +1,6 @@
 package com.myframe.aviator.test;
 
-import com.myframe.excel.entity.ExcelConfiguration;
+import com.myframe.excel.constant.VersionConstant;
 import com.myframe.excel.loader.ConfigurationLoader;
 import com.myframe.excel.loader.impl.conf.ExcelConfigurationLoader;
 import com.myframe.excel.poi.POIFactory;
@@ -13,8 +13,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * @author LCH
@@ -26,16 +24,18 @@ public class POITest {
     public static void main(String[] args){
 
 
-        ExecutorService executorService = Executors.newCachedThreadPool();
+//        ExecutorService executorService = Executors.newCachedThreadPool();
 
         POITest POITest = new POITest();
+//
+//        for (int i = 0; i < 1; i++)
+//        {
+//            String name = "test-" + i + ".csv";
+//            executorService.execute(() -> POITest.poiTest(name));
+//        }
+//        executorService.shutdown();
 
-        for (int i = 0; i < 5; i++)
-        {
-            String name = "test-" + i + ".xls";
-            executorService.execute(() -> POITest.poiTest(name));
-        }
-        executorService.shutdown();
+        POITest.poiTest("test.csv");
     }
 
     @Test
@@ -59,7 +59,7 @@ public class POITest {
         List<Demo> list = new ArrayList<>();
         Random random = new Random();
 
-        for (int i = 0; i < 50000; i++) {
+        for (int i = 0; i < 200000; i++) {
 
             Demo demo = new Demo();
 
@@ -97,6 +97,22 @@ public class POITest {
             e.printStackTrace();
         }
 
+    }
+
+    private String getSuffix(String version){
+
+        switch (version){
+
+            case VersionConstant.EXCEL_2007:
+                return ".xlsx";
+
+            case VersionConstant.EXCEL_2007_ADV:
+                return ".csv";
+
+            case VersionConstant.EXCEL_2003:
+            default:
+                return ".xls";
+        }
     }
 
     @Test
