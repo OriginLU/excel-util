@@ -11,9 +11,9 @@ public  class FileUtils {
 
         File file = new File(path);
 
-        if (file.isFile())
+        if (!file.isDirectory())
         {
-            throw new IllegalArgumentException("input parameter error,require parameter is file path,check please");
+            throw new IllegalArgumentException("the required parameter is file path,the input parameter is [" + path + "], check please");
         }
 
         if (!file.exists())
