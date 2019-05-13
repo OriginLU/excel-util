@@ -20,7 +20,7 @@ public  class FileUtils {
         {
             if (!file.mkdir())
             {
-                throw new IllegalStateException("can't create direction [" + path + "]");
+                throw new IllegalStateException("can't create file path [" + path + "]");
             }
         }
 
