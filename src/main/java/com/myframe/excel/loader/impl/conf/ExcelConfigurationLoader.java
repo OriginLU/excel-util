@@ -110,10 +110,9 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
         switch (version){
 
             case VersionConstant.EXCEL_2007:
-                return ".xlsx";
 
             case VersionConstant.EXCEL_2007_ADV:
-                return ".csv";
+                return ".xlsx";
 
             case VersionConstant.EXCEL_2003:
             default:
