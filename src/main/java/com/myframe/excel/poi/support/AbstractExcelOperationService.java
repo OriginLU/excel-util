@@ -2,12 +2,14 @@ package com.myframe.excel.poi.support;
 
 import com.myframe.excel.converter.DefaultFormatterConverter;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
+import com.myframe.excel.entity.ExcelConfiguration;
 import com.myframe.excel.exception.ExcelCreateException;
 import com.myframe.excel.formatter.DataFormatter;
 import com.myframe.excel.loader.ConfigurationLoader;
 import com.myframe.excel.loader.impl.conf.ExcelConfigurationLoader;
 import com.myframe.excel.poi.cellstyle.DefaultCellStyle;
 import com.myframe.excel.poi.cellstyle.POICellStyle;
+import com.myframe.excel.util.FileUtils;
 import com.myframe.excel.util.ReflectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
@@ -17,6 +19,9 @@ import org.springframework.core.convert.ConverterNotFoundException;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.expression.TypeConverter;
 
+import java.io.Closeable;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -52,6 +57,59 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
         return workbook.createSheet(sheetName);
     }
 
+    protected String writeToLocal(Workbook workbook,Class<?> type, String path){
+
+
+        FileOutputStream fos = null;
+        try
+        {
+            String fullPath = getFullPath(type,path);
+            fos = new FileOutputStream(fullPath);
+            workbook.write(fos);
+            fos.flush();
+
+            return fullPath;
+        }
+        catch (Throwable e)
+        {
+            throw new ExcelCreateException("can't create excel file,check please");
+        }
+        finally
+        {
+            close(fos);
+        }
+
+    }
+
+    private String getFullPath(Class<?> type, String path) {
+        path = FileUtils.getPath(path);
+        ExcelConfiguration exportConfiguration = configurationLoader.getExportConfiguration(type);
+        String fileSuffix = exportConfiguration.getFileSuffix();
+        String excelName = getOutName(exportConfiguration.getExcelName(),type);
+        return path + excelName + exportConfiguration.getFileSuffix();
+    }
+
+    private void close(Closeable closeable)
+    {
+        if (closeable != null)
+        {
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                throw new ExcelCreateException("can't close output stream,check please");
+            }
+        }
+    }
+
+    private String getOutName(String name,Class<?> type){
+
+        if (StringUtils.isNotBlank(name))
+        {
+            return name + "-" + System.currentTimeMillis();
+        }
+        return type.getSimpleName() + "-" + System.currentTimeMillis();
+
+    }
 
 
     protected List<?> getNextList(List<?> totalList, int count,int separateRowNum) {

@@ -8,6 +8,9 @@ import java.util.List;
 public interface ExcelOperationService{
 
 
+    String exportToLocal(List<?> data, Class<?> type,String path);
+
+    String exportToLocal(List<?> data, Class<?> type,int maxRowNum,String path);
 
     Workbook exportSheet(List<?> data, Class<?> type);
 

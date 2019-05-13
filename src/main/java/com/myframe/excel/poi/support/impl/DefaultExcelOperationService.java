@@ -33,6 +33,22 @@ public class DefaultExcelOperationService extends AbstractExcelOperationService 
 
 
     @Override
+    public String exportToLocal(List<?> data, Class<?> type, String path) {
+
+        Workbook workbook = exportSheet(data, type);
+
+        return writeToLocal(workbook,type,path);
+    }
+
+    @Override
+    public String exportToLocal(List<?> data, Class<?> type, int maxRowNum, String path) {
+
+        Workbook workbook = exportMultiSheet(data, type,maxRowNum);
+
+        return  writeToLocal(workbook,type,path);
+    }
+
+    @Override
     public Workbook exportSheet(List<?> data, Class<?> type) {
 
 

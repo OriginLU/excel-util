@@ -4,12 +4,11 @@ public class ExcelConfiguration {
 
     private String excelName;
 
-
     private String version;
 
+    private String fileSuffix;
 
     private boolean isCreateTitle;
-
 
     private ExcelColumnConfiguration[] configurations;
 
@@ -24,6 +23,14 @@ public class ExcelConfiguration {
 
     public String getExcelName() {
         return excelName;
+    }
+
+    public String getFileSuffix() {
+        return fileSuffix;
+    }
+
+    public void setFileSuffix(String fileSuffix) {
+        this.fileSuffix = fileSuffix;
     }
 
     public void setExcelName(String excelName) {

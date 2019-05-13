@@ -35,7 +35,7 @@ public class POITest {
 //        }
 //        executorService.shutdown();
 
-        POITest.poiTest("test.csv");
+        POITest.poiTest();
     }
 
     @Test
@@ -53,7 +53,7 @@ public class POITest {
 
 
 
-    private void poiTest(String name){
+    private void poiTest(){
 
 
         List<Demo> list = new ArrayList<>();
@@ -73,47 +73,17 @@ public class POITest {
 
             list.add(demo);
         }
-        try
-        {
-            long currentTimeMillis = System.currentTimeMillis();
+        long currentTimeMillis = System.currentTimeMillis();
 
-            ExcelOperationService excelService = POIFactory.getInstance().build();
-            Workbook excel = excelService.exportSheet(list, Demo.class);
+        String path = getClass().getResource("/").getPath();
+        ExcelOperationService excelService = POIFactory.getInstance().build();
+        String s = excelService.exportToLocal(list, Demo.class, path);
 
+        System.out.println("cost time : " + (System.currentTimeMillis() - currentTimeMillis));
 
-            String path = getClass().getResource("/").getPath();
-            File file = new File(path + name);
-            System.out.println("out path is [" + file.getPath() + "]");
-
-            FileOutputStream outputStream = new FileOutputStream(new File(path + name));
-
-            excel.write(outputStream);
-            outputStream.flush();
-            outputStream.close();
-            System.out.println("cost time : " + (System.currentTimeMillis() - currentTimeMillis));
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
 
     }
 
-    private String getSuffix(String version){
-
-        switch (version){
-
-            case VersionConstant.EXCEL_2007:
-                return ".xlsx";
-
-            case VersionConstant.EXCEL_2007_ADV:
-                return ".csv";
-
-            case VersionConstant.EXCEL_2003:
-            default:
-                return ".xls";
-        }
-    }
 
     @Test
     public void testExcelConfigurationLoader(){

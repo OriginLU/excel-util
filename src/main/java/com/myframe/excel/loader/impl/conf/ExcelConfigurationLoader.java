@@ -2,6 +2,7 @@ package com.myframe.excel.loader.impl.conf;
 
 import com.myframe.excel.annotation.Excel;
 import com.myframe.excel.annotation.ExcelColumn;
+import com.myframe.excel.constant.VersionConstant;
 import com.myframe.excel.constants.LoadType;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.entity.ExcelConfiguration;
@@ -98,10 +99,28 @@ public class ExcelConfigurationLoader implements ConfigurationLoader {
         configuration.setVersion(excel.version());
         configuration.setExcelName(excel.value());
         configuration.setCreateTitle(excel.isCreateTitle());
+        configuration.setFileSuffix(getSuffix(excel.version()));
         configuration.setConfigurations(getConfiguration(type,loadType));
 
         return configuration;
     }
+
+    private String getSuffix(String version){
+
+        switch (version){
+
+            case VersionConstant.EXCEL_2007:
+                return ".xlsx";
+
+            case VersionConstant.EXCEL_2007_ADV:
+                return ".csv";
+
+            case VersionConstant.EXCEL_2003:
+            default:
+                return ".xls";
+        }
+    }
+
 
     private ExcelColumnConfiguration[] getConfiguration(Class<?> type, LoadType loadType) {
 
