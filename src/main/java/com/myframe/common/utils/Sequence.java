@@ -6,30 +6,29 @@ package com.myframe.common.utils;
  */
 public class Sequence {
 
-    //初始时间截 (2017-01-01)
-    private static final long INITIAL_TIME_STAMP = 1483200000000L;
+    private static final long INITIAL_TIME_STAMP = 1557720000000L;
 
     private static final long WORKER_ID_BITS = 5L;
 
-    private static final long DATACENTER_ID_BITS = 5L;
+    private static final long DATA_CENTER_ID_BITS = 5L;
 
     private static final long MAX_WORKER_ID = ~(-1L << WORKER_ID_BITS);
 
-    private static final long MAX_DATACENTER_ID = ~(-1L << DATACENTER_ID_BITS);
+    private static final long MAX_DATA_CENTER_ID = ~(-1L << DATA_CENTER_ID_BITS);
 
-    private final long SEQUENCE_BITS = 12L;
+    private static final long SEQUENCE_BITS = 12L;
 
-    private final long WORKERID_OFFSET = SEQUENCE_BITS;
+    private static final long WORKER_ID_OFFSET = SEQUENCE_BITS;
 
-    private final long DATACENTERID_OFFSET = SEQUENCE_BITS + SEQUENCE_BITS;
+    private static final long DATA_CENTER_ID_OFFSET = SEQUENCE_BITS + SEQUENCE_BITS;
 
-    private final long TIMESTAMP_OFFSET = SEQUENCE_BITS + WORKER_ID_BITS + DATACENTER_ID_BITS;
+    private static final long TIMESTAMP_OFFSET = SEQUENCE_BITS + WORKER_ID_BITS + DATA_CENTER_ID_BITS;
 
-    private final long SEQUENCE_MASK = ~(-1L << SEQUENCE_BITS);
+    private static final long SEQUENCE_MASK = ~(-1L << SEQUENCE_BITS);
 
     private long workerId;
 
-    private long datacenterId;
+    private long dataCenterId;
 
     private long sequence = 0L;
 
@@ -37,63 +36,64 @@ public class Sequence {
 
     /**
      * 构造函数
-     *
-     * @param workerId     工作ID (0~31)
-     * @param datacenterId 数据中心ID (0~31)
      */
-    public Sequence(long workerId, long datacenterId) {
+    public Sequence(long workerId, long dataCenterId) {
 
-        if (workerId > MAX_WORKER_ID || workerId < 0) {
+        if (workerId > MAX_WORKER_ID || workerId < 0)
+        {
             throw new IllegalArgumentException(String.format("WorkerID 不能大于 %d 或小于 0", MAX_WORKER_ID));
         }
 
-        if (datacenterId > MAX_DATACENTER_ID || datacenterId < 0) {
-            throw new IllegalArgumentException(String.format("DataCenterID 不能大于 %d 或小于 0", MAX_DATACENTER_ID));
+        if (dataCenterId > MAX_DATA_CENTER_ID || dataCenterId < 0)
+        {
+            throw new IllegalArgumentException(String.format("DataCenterID 不能大于 %d 或小于 0", MAX_DATA_CENTER_ID));
         }
         this.workerId = workerId;
-        this.datacenterId = datacenterId;
+        this.dataCenterId = dataCenterId;
     }
 
     /**
      * 获得下一个ID (用同步锁保证线程安全)
-     *
-     * @return SnowflakeId
      */
     public synchronized Long nextId() {
 
         long timestamp = System.currentTimeMillis();
-        if (timestamp < lastTimestamp) {                 //如果当前时间小于上一次ID生成的时间戳，说明系统时钟回退过这个时候应当抛出异常
+        if (timestamp < lastTimestamp)
+        {
             throw new RuntimeException("当前时间小于上一次记录的时间戳！");
         }
-        if (lastTimestamp == timestamp) {                //如果是同一时间生成的，则进行毫秒内序列
+        if (lastTimestamp == timestamp)   //如果是同一时间生成的，则进行毫秒内序列
+        {
             sequence = (sequence + 1) & SEQUENCE_MASK;
-            if (sequence == 0) {                          //sequence等于0说明毫秒内序列已经增长到最大值
-                timestamp = tilNextMillis(lastTimestamp); //阻塞到下一个毫秒,获得新的时间戳
+            if (sequence == 0)
+            {
+                timestamp = tilNextMillis(lastTimestamp);
             }
-        } else {                                            //时间戳改变，毫秒内序列重置
+        }
+        else
+        {
             sequence = 0L;
         }
-        lastTimestamp = timestamp;//上次生成ID的时间截
+        lastTimestamp = timestamp;
 
-        //移位并通过或运算拼到一起组成64位的ID
         return ((timestamp - INITIAL_TIME_STAMP) << TIMESTAMP_OFFSET)
-                | (datacenterId << DATACENTERID_OFFSET)
-                | (workerId << WORKERID_OFFSET)
+                | (dataCenterId << DATA_CENTER_ID_OFFSET)
+                | (workerId << WORKER_ID_OFFSET)
                 | sequence;
     }
 
     /**
      * 阻塞到下一个毫秒，直到获得新的时间戳
-     *
-     * @param lastTimestamp 上次生成ID的时间截
-     * @return 当前时间戳
      */
-    protected long tilNextMillis(long lastTimestamp) {
+    private long tilNextMillis(long lastTimestamp) {
 
         long timestamp = System.currentTimeMillis();
-        while (timestamp <= lastTimestamp) {
+        while (timestamp <= lastTimestamp)
+        {
             timestamp = System.currentTimeMillis();
         }
         return timestamp;
     }
+
+
 }

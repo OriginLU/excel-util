@@ -1,5 +1,6 @@
 package com.myframe.excel.poi.support;
 
+import com.myframe.common.utils.Sequence;
 import com.myframe.excel.converter.DefaultFormatterConverter;
 import com.myframe.excel.entity.ExcelColumnConfiguration;
 import com.myframe.excel.entity.ExcelConfiguration;
@@ -34,6 +35,8 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
 
     private TypeConverter converter;
 
+    private Sequence sequence;
+
     protected POICellStyle poiCellStyle;
 
     protected ConfigurationLoader configurationLoader;
@@ -48,6 +51,7 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
 
         this.poiCellStyle = poiCellStyle;
         this.converter = new DefaultFormatterConverter();
+        this.sequence = new Sequence(0L,0L);
         this.configurationLoader = ExcelConfigurationLoader.getExcelConfigurationLoader();
     }
 
@@ -105,9 +109,9 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
 
         if (StringUtils.isNotBlank(name))
         {
-            return name + "-" + System.currentTimeMillis();
+            return name + "-" + sequence.nextId();
         }
-        return type.getSimpleName() + "-" + System.currentTimeMillis();
+        return type.getSimpleName() + "-" + sequence.nextId();
 
     }
 
