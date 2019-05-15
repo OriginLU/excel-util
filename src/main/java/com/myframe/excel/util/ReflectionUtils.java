@@ -32,20 +32,6 @@ public abstract class ReflectionUtils {
     }
 
 
-    public static Object invokeMethod(Object target, String methodName, Object... args) throws NoSuchMethodException, InvocationTargetException {
-
-        Class<?> clazz = target.getClass();
-        Class[] classes = new Class[args.length];
-        for (int i = 0; i < args.length; i++)
-        {
-            classes[i] = args[i].getClass();
-        }
-        Method method = getMethod(clazz, methodName, classes);
-
-        return invokeMethod(target,method,args);
-    }
-
-
     public static Object invokeMethod(Object target, Method method, Object... args) throws InvocationTargetException {
 
         boolean accessible = method.isAccessible();
@@ -62,27 +48,6 @@ public abstract class ReflectionUtils {
             //ignore this exception
         }
         return null;
-    }
-
-
-    /**
-     * 获取目标方法
-     */
-    private static Method getMethod(Class<?> target, String methodName, Class<?> ... paramTypes) throws NoSuchMethodException {
-
-        try
-        {
-            return target.getDeclaredMethod(methodName, paramTypes);
-        }
-        catch (NoSuchMethodException e)
-        {
-            target = target.getSuperclass();
-            if (target == null)
-            {
-                throw new NoSuchMethodException("not found [" + methodName + "(" + Arrays.asList(paramTypes) + ")] method");
-            }
-            return getMethod(target, methodName, paramTypes);
-        }
     }
 
 

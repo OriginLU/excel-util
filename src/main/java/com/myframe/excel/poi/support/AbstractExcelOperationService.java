@@ -86,11 +86,11 @@ public abstract class AbstractExcelOperationService implements ExcelOperationSer
     }
 
     private String getFullPath(Class<?> type, String path) {
-        path = FileUtils.getPath(path);
+
         ExcelConfiguration exportConfiguration = configurationLoader.getExportConfiguration(type);
-        String fileSuffix = exportConfiguration.getFileSuffix();
-        String excelName = getOutName(exportConfiguration.getExcelName(),type);
-        return path + excelName + exportConfiguration.getFileSuffix();
+        String name = getOutName(exportConfiguration.getExcelName(),type);
+
+        return FileUtils.getPath(path) + name + exportConfiguration.getFileSuffix();
     }
 
     private void close(Closeable closeable)
